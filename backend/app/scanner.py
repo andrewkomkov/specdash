@@ -1,0 +1,394 @@
+"""Filesystem scanning. Strictly read-only: open/stat/listdir and nothing else.
+
+A project qualifies if it holds a `.specify/` directory or a `specs/` directory
+with at least one numbered feature folder.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import re
+import subprocess
+import time
+from pathlib import Path
+
+from . import parsing
+from .models import (
+    Artifact,
+    Commit,
+    Feature,
+    Progress,
+    Project,
+    Snapshot,
+    Stage,
+)
+
+log = logging.getLogger("specdash.scanner")
+
+FEATURE_DIR_RE = re.compile(r"^(\d{1,4})[-_](.+)$")
+IGNORED_DIRS = {
+    ".git",
+    "node_modules",
+    "venv",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "target",
+    ".gradle",
+    ".idea",
+    "vendor",
+    ".next",
+    "Pods",
+}
+
+KNOWN_ARTIFACTS: list[tuple[str, str]] = [
+    ("spec.md", "Spec"),
+    ("plan.md", "Plan"),
+    ("tasks.md", "Tasks"),
+    ("research.md", "Research"),
+    ("data-model.md", "Data model"),
+    ("quickstart.md", "Quickstart"),
+]
+
+
+def _read(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _artifact(path: Path, rel: str, key: str, label: str) -> Artifact:
+    st = path.stat()
+    text = ""
+    try:
+        text = _read(path)
+    except OSError:
+        pass
+    return Artifact(
+        key=key,
+        file=rel,
+        label=label,
+        bytes=st.st_size,
+        modified=st.st_mtime,
+        headings=sum(1 for line in text.splitlines() if line.startswith("#")),
+        words=len(text.split()),
+    )
+
+
+def _decide_stage(
+    *,
+    has_spec: bool,
+    has_plan: bool,
+    has_tasks: bool,
+    progress: Progress,
+    clarified: bool,
+    status: str | None,
+    open_questions: int,
+) -> tuple[Stage, str]:
+    """Where a feature sits in the spec-kit pipeline, and why.
+
+    Evidence on disk wins over prose: a `**Status**` line saying "ready for
+    planning" does not move a feature that already has a full task list.
+    """
+    if has_tasks and progress.total:
+        if progress.done == progress.total:
+            return "done", f"all {progress.total} tasks ticked"
+        if progress.done:
+            return "implement", f"{progress.done}/{progress.total} tasks ticked"
+        return "tasks", f"{progress.total} tasks, none started"
+    if has_tasks:
+        return "tasks", "tasks.md present"
+    if has_plan:
+        return "plan", "plan.md present, no tasks.md yet"
+
+    status_low = (status or "").lower()
+    if open_questions:
+        return "specify", f"{open_questions} open clarification marker(s)"
+    if clarified or any(
+        w in status_low for w in ("clarified", "ready for plan", "ready to plan", "approved")
+    ):
+        return "clarify", "spec clarified, awaiting plan"
+    if has_spec:
+        return "specify", "spec.md only"
+    return "specify", "no spec.md found"
+
+
+def _git(cwd: Path, *args: str) -> str | None:
+    """Run a read-only git command. Never touches the working tree."""
+    try:
+        out = subprocess.run(
+            ["git", "--no-optional-locks", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def feature_commits(project_path: Path, rel_dir: str, limit: int = 10) -> list[Commit]:
+    """History touching one feature directory. Called on demand, never during a scan:
+    a git process per feature would dominate the rescan that follows every save."""
+    raw = _git(
+        project_path,
+        "log",
+        f"-{limit}",
+        "--no-merges",
+        "--date=relative",
+        "--format=%h%x1f%s%x1f%an%x1f%aI%x1f%ad",
+        "--",
+        rel_dir,
+    )
+    if not raw:
+        return []
+    commits: list[Commit] = []
+    for line in raw.splitlines():
+        parts = line.split("\x1f")
+        if len(parts) != 5:
+            continue
+        commits.append(
+            Commit(sha=parts[0], subject=parts[1], author=parts[2], date=parts[3], relative=parts[4])
+        )
+    return commits
+
+
+def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feature:
+    dir_name = feature_dir.name
+    m = FEATURE_DIR_RE.match(dir_name)
+    number = m.group(1) if m else None
+    slug = m.group(2) if m else dir_name
+
+    artifacts: list[Artifact] = []
+    texts: dict[str, str] = {}
+    modified = feature_dir.stat().st_mtime
+
+    for filename, label in KNOWN_ARTIFACTS:
+        path = feature_dir / filename
+        if not path.is_file():
+            continue
+        key = filename[:-3]
+        artifacts.append(_artifact(path, filename, key, label))
+        try:
+            texts[key] = _read(path)
+        except OSError:
+            texts[key] = ""
+        modified = max(modified, path.stat().st_mtime)
+
+    contracts_dir = feature_dir / "contracts"
+    if contracts_dir.is_dir():
+        for path in sorted(contracts_dir.iterdir()):
+            if path.is_file() and path.suffix in (".md", ".yaml", ".yml", ".json"):
+                rel = f"contracts/{path.name}"
+                artifacts.append(_artifact(path, rel, rel, f"Contract · {path.stem}"))
+                modified = max(modified, path.stat().st_mtime)
+
+    for path in sorted(feature_dir.glob("*.md")):
+        if path.name in {a[0] for a in KNOWN_ARTIFACTS}:
+            continue
+        artifacts.append(_artifact(path, path.name, path.name, path.stem.replace("-", " ").title()))
+        modified = max(modified, path.stat().st_mtime)
+
+    spec = parsing.parse_spec(texts.get("spec", "")) if "spec" in texts else parsing.SpecInfo()
+    phases, tasks = parsing.parse_tasks(texts["tasks"]) if "tasks" in texts else ([], [])
+    plan_summary, tech = parsing.parse_plan(texts["plan"]) if "plan" in texts else (None, {})
+
+    checklists = []
+    checklist_dir = feature_dir / "checklists"
+    if checklist_dir.is_dir():
+        for path in sorted(checklist_dir.glob("*.md")):
+            rel = f"checklists/{path.name}"
+            try:
+                checklists.append(parsing.parse_checklist(path.stem, rel, _read(path)))
+            except OSError:
+                continue
+            artifacts.append(_artifact(path, rel, rel, f"Checklist · {path.stem}"))
+            modified = max(modified, path.stat().st_mtime)
+
+    progress = Progress(done=sum(1 for t in tasks if t.done), total=len(tasks))
+    checklist_progress = Progress(
+        done=sum(c.done for c in checklists), total=sum(c.total for c in checklists)
+    )
+
+    # Fold task counts into the user stories they serve.
+    by_story: dict[str, list] = {}
+    for t in tasks:
+        if t.story:
+            by_story.setdefault(t.story, []).append(t)
+    for story in spec.user_stories:
+        owned = by_story.get(story.id, [])
+        story.total = len(owned)
+        story.done = sum(1 for t in owned if t.done)
+    # A story named only in tasks.md still deserves a row on the card.
+    known = {s.id for s in spec.user_stories}
+    for story_id, owned in sorted(by_story.items()):
+        if story_id in known:
+            continue
+        phase = next((p for p in phases if p.story == story_id), None)
+        spec.user_stories.append(
+            parsing.UserStory(
+                id=story_id,
+                number=int(story_id[2:]) if story_id[2:].isdigit() else 99,
+                title=phase.title if phase else story_id,
+                priority=phase.priority if phase else None,
+                done=sum(1 for t in owned if t.done),
+                total=len(owned),
+            )
+        )
+    spec.user_stories.sort(key=lambda s: s.number)
+
+    stage, reason = _decide_stage(
+        has_spec="spec" in texts,
+        has_plan="plan" in texts,
+        has_tasks="tasks" in texts,
+        progress=progress,
+        clarified=bool(spec.clarifications),
+        status=spec.status,
+        open_questions=len(spec.open_questions),
+    )
+
+    title = spec.title or slug.replace("-", " ").title()
+
+    return Feature(
+        id=dir_name,
+        project_id=project.id,
+        number=number,
+        slug=slug,
+        title=title,
+        stage=stage,
+        stage_reason=reason,
+        status=spec.status,
+        branch=spec.branch or dir_name,
+        created=spec.created,
+        is_current=project.current_feature == dir_name,
+        summary=spec.summary or plan_summary,
+        input=spec.input,
+        progress=progress,
+        checklist_progress=checklist_progress,
+        artifacts=artifacts,
+        user_stories=spec.user_stories,
+        phases=phases,
+        tasks=tasks,
+        checklists=checklists,
+        requirements=spec.requirements,
+        success_criteria=spec.success_criteria,
+        edge_cases=spec.edge_cases,
+        clarifications=spec.clarifications,
+        tech=tech,
+        open_questions=spec.open_questions,
+        modified=modified,
+    )
+
+
+def scan_project(path: Path, *, with_git: bool = True) -> Project | None:
+    specify_dir = path / ".specify"
+    specs_dir = path / "specs"
+    if not specify_dir.is_dir() and not specs_dir.is_dir():
+        return None
+
+    project = Project(
+        id=path.name,
+        name=path.name,
+        path=str(path),
+        has_specify=specify_dir.is_dir(),
+        modified=path.stat().st_mtime,
+    )
+
+    feature_json = specify_dir / "feature.json"
+    if feature_json.is_file():
+        try:
+            data = json.loads(_read(feature_json))
+            current = data.get("feature_directory") or data.get("featureDirectory")
+            if isinstance(current, str):
+                project.current_feature = current.rstrip("/").split("/")[-1]
+        except (OSError, ValueError):
+            pass
+
+    constitution = specify_dir / "memory" / "constitution.md"
+    if constitution.is_file():
+        try:
+            text = _read(constitution)
+            project.constitution = text
+            vm = re.search(r"\*\*Version\*\*\s*:\s*([0-9]+\.[0-9]+\.[0-9]+)", text)
+            project.constitution_version = vm.group(1) if vm else None
+        except OSError:
+            pass
+
+    if with_git and (path / ".git").exists():
+        project.branch = _git(path, "rev-parse", "--abbrev-ref", "HEAD")
+
+    if specs_dir.is_dir():
+        for child in sorted(specs_dir.iterdir()):
+            if not child.is_dir() or child.name.startswith("."):
+                continue
+            try:
+                feature = scan_feature(project, child, with_git=with_git)
+            except OSError as exc:  # unreadable feature folder must not kill the board
+                log.warning("skipping %s: %s", child, exc)
+                continue
+            project.features.append(feature)
+            project.modified = max(project.modified, feature.modified)
+
+    # Newest feature number first — that is the one being worked on.
+    project.features.sort(key=lambda f: (f.number or "", f.id), reverse=True)
+
+    if not project.features and not project.has_specify:
+        return None
+    return project
+
+
+def discover(root: Path, max_depth: int = 2) -> list[Path]:
+    """Directories under `root` that look like spec-kit projects."""
+    found: list[Path] = []
+
+    def walk(current: Path, depth: int) -> None:
+        if depth > max_depth:
+            return
+        try:
+            children = sorted(current.iterdir())
+        except OSError:
+            return
+        if (current / ".specify").is_dir() or (current / "specs").is_dir():
+            found.append(current)
+            return  # do not descend into a project
+        for child in children:
+            if child.is_dir() and not child.name.startswith(".") and child.name not in IGNORED_DIRS:
+                walk(child, depth + 1)
+
+    walk(root, 0)
+    return found
+
+
+def scan_all(
+    roots: list[Path], *, explicit: list[Path] | None = None, with_git: bool = True
+) -> Snapshot:
+    started = time.perf_counter()
+    candidates: list[Path] = list(explicit or [])
+    for root in roots:
+        candidates.extend(discover(root))
+
+    projects: list[Project] = []
+    seen: set[str] = set()
+    for path in candidates:
+        real = str(path)
+        if real in seen:
+            continue
+        seen.add(real)
+        try:
+            project = scan_project(path, with_git=with_git)
+        except OSError as exc:
+            log.warning("cannot scan %s: %s", path, exc)
+            continue
+        if project:
+            projects.append(project)
+
+    projects.sort(key=lambda p: p.modified, reverse=True)
+    return Snapshot(
+        generated_at=time.time(),
+        root=os.pathsep.join(str(r) for r in roots),
+        projects=projects,
+        scan_ms=int((time.perf_counter() - started) * 1000),
+    )

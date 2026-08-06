@@ -1,0 +1,27 @@
+services:
+  specdash:
+    # Published image; comment `image` out (or run `docker compose build`) to build locally.
+    image: ${SPECDASH_IMAGE:-andrewkomkov/specdash:latest}
+    build: .
+    container_name: specdash
+    ports:
+      - "${SPECDASH_PORT:-8420}:8420"
+    environment:
+      # Where to look inside the container. The host path is mapped below.
+      SPECDASH_ROOTS: /projects
+      # How deep under the root to look for spec-kit projects.
+      SPECDASH_MAX_DEPTH: "${SPECDASH_MAX_DEPTH:-2}"
+      # Bind mounts on macOS/Windows do not deliver inotify events, so poll.
+      WATCHFILES_FORCE_POLLING: "${SPECDASH_POLLING:-1}"
+      SPECDASH_POLL_DELAY_MS: "${SPECDASH_POLL_DELAY_MS:-800}"
+      SPECDASH_GIT: "1"
+      TZ: "${TZ:-Europe/Berlin}"
+    volumes:
+      # read-only, enforced by the kernel: SpecDash cannot write to your projects
+      - ${PROJECTS_ROOT:?set PROJECTS_ROOT in .env — the folder holding your spec-kit projects}:/projects:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

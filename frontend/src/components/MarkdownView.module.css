@@ -1,0 +1,42 @@
+.markdown {
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.6;
+  padding-right: var(--mantine-spacing-sm);
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 1.3rem;
+  margin: 0 0 var(--mantine-spacing-xs);
+}
+
+.markdown li {
+  margin-bottom: 4px;
+}
+
+.markdown blockquote {
+  margin: var(--mantine-spacing-xs) 0;
+  padding-left: var(--mantine-spacing-sm);
+  border-left: 3px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  color: var(--mantine-color-dimmed);
+}
+
+.markdown hr {
+  border: none;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  margin: var(--mantine-spacing-md) 0;
+}
+
+.markdown input[type='checkbox'] {
+  margin-right: 6px;
+  accent-color: var(--mantine-color-teal-6);
+}
+
+.paragraph {
+  line-height: 1.6;
+}
+
+.raw {
+  font-size: 11px;
+  white-space: pre-wrap;
+}
