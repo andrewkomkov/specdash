@@ -6,15 +6,15 @@ with at least one numbered feature folder.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
 import re
-import subprocess
 import time
 from pathlib import Path
 
-from . import parsing
+from . import git, parsing
 from .models import (
     Artifact,
     Commit,
@@ -114,26 +114,10 @@ def _decide_stage(
     return "specify", "no spec.md found"
 
 
-def _git(cwd: Path, *args: str) -> str | None:
-    """Run a read-only git command. Never touches the working tree."""
-    try:
-        out = subprocess.run(
-            ["git", "--no-optional-locks", *args],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return out.stdout.strip() if out.returncode == 0 else None
-
-
 def feature_commits(project_path: Path, rel_dir: str, limit: int = 10) -> list[Commit]:
     """History touching one feature directory. Called on demand, never during a scan:
     a git process per feature would dominate the rescan that follows every save."""
-    raw = _git(
+    raw = git.run(
         project_path,
         "log",
         f"-{limit}",
@@ -166,9 +150,15 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
     texts: dict[str, str] = {}
     modified = feature_dir.stat().st_mtime
 
+    # Listing the directory up front rather than probing file by file: every
+    # per-file check swallows a permission error and returns False, so a folder
+    # nobody can read would otherwise render as a feature holding nothing. This
+    # raises, and the reason ends up on the project.
+    entries = sorted(path.name for path in feature_dir.iterdir())
+
     for filename, label in KNOWN_ARTIFACTS:
         path = feature_dir / filename
-        if not path.is_file():
+        if filename not in entries or not path.is_file():
             continue
         key = filename[:-3]
         artifacts.append(_artifact(path, filename, key, label))
@@ -186,10 +176,12 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
                 artifacts.append(_artifact(path, rel, rel, f"Contract · {path.stem}"))
                 modified = max(modified, path.stat().st_mtime)
 
-    for path in sorted(feature_dir.glob("*.md")):
-        if path.name in {a[0] for a in KNOWN_ARTIFACTS}:
+    known = {a[0] for a in KNOWN_ARTIFACTS}
+    for name in entries:
+        path = feature_dir / name
+        if name in known or not name.endswith(".md") or not path.is_file():
             continue
-        artifacts.append(_artifact(path, path.name, path.name, path.stem.replace("-", " ").title()))
+        artifacts.append(_artifact(path, name, name, path.stem.replace("-", " ").title()))
         modified = max(modified, path.stat().st_mtime)
 
     spec = parsing.parse_spec(texts.get("spec", "")) if "spec" in texts else parsing.SpecInfo()
@@ -283,15 +275,50 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
     )
 
 
-def scan_project(path: Path, *, with_git: bool = True) -> Project | None:
+def project_ids(paths: list[Path]) -> dict[Path, tuple[str, str]]:
+    """Stable `(id, display name)` per project path, unique across the whole scan.
+
+    Two checkouts called `app` under different parents are two different projects
+    and must not share an id — the id keys the API, the filter and the drawer. A
+    unique directory name is left alone, because that is almost always the case
+    and a readable id is worth keeping; a clash is disambiguated by walking up
+    the path until the names differ, and falls back to a digest of the full path
+    for the pathological case where they never do.
+    """
+    out: dict[Path, tuple[str, str]] = {}
+    by_name: dict[str, list[Path]] = {}
+    for path in paths:
+        by_name.setdefault(path.name, []).append(path)
+
+    for name, group in by_name.items():
+        if len(group) == 1:
+            out[group[0]] = (name, name)
+            continue
+        for path in group:
+            parts = path.parts
+            label = name
+            for depth in range(2, min(len(parts), 5) + 1):
+                label = "/".join(parts[-depth:])
+                if sum(1 for other in group if "/".join(other.parts[-depth:]) == label) == 1:
+                    break
+            else:
+                digest = hashlib.sha1(str(path).encode()).hexdigest()[:7]
+                out[path] = (f"{name}-{digest}", f"{name} ({digest})")
+                continue
+            out[path] = (re.sub(r"[^A-Za-z0-9._-]+", "-", label).strip("-"), label)
+    return out
+
+
+def scan_project(path: Path, *, project_id: str | None = None, name: str | None = None,
+                 with_git: bool = True) -> Project | None:
     specify_dir = path / ".specify"
     specs_dir = path / "specs"
     if not specify_dir.is_dir() and not specs_dir.is_dir():
         return None
 
     project = Project(
-        id=path.name,
-        name=path.name,
+        id=project_id or path.name,
+        name=name or path.name,
         path=str(path),
         has_specify=specify_dir.is_dir(),
         modified=path.stat().st_mtime,
@@ -318,19 +345,28 @@ def scan_project(path: Path, *, with_git: bool = True) -> Project | None:
             pass
 
     if with_git and (path / ".git").exists():
-        project.branch = _git(path, "rev-parse", "--abbrev-ref", "HEAD")
+        project.branch = git.run(path, "rev-parse", "--abbrev-ref", "HEAD")
 
+    skipped: list[str] = []
     if specs_dir.is_dir():
         for child in sorted(specs_dir.iterdir()):
             if not child.is_dir() or child.name.startswith("."):
                 continue
             try:
                 feature = scan_feature(project, child, with_git=with_git)
-            except OSError as exc:  # unreadable feature folder must not kill the board
-                log.warning("skipping %s: %s", child, exc)
+            except Exception as exc:  # one bad folder must not blank the board
+                log.warning("skipping %s: %s", child, exc, exc_info=True)
+                skipped.append(f"{child.name}: {exc}")
                 continue
             project.features.append(feature)
             project.modified = max(project.modified, feature.modified)
+
+    if skipped:
+        # Recorded on the project rather than only logged: a feature silently
+        # missing from the board is indistinguishable from one that never existed.
+        project.error = f"{len(skipped)} feature folder(s) could not be read — " + "; ".join(
+            skipped[:3]
+        )
 
     # Newest feature number first — that is the one being worked on.
     project.features.sort(key=lambda f: (f.number or "", f.id), reverse=True)
@@ -363,24 +399,42 @@ def discover(root: Path, max_depth: int = 2) -> list[Path]:
 
 
 def scan_all(
-    roots: list[Path], *, explicit: list[Path] | None = None, with_git: bool = True
+    roots: list[Path],
+    *,
+    explicit: list[Path] | None = None,
+    with_git: bool = True,
+    max_depth: int = 2,
 ) -> Snapshot:
     started = time.perf_counter()
     candidates: list[Path] = list(explicit or [])
     for root in roots:
-        candidates.extend(discover(root))
+        candidates.extend(discover(root, max_depth))
 
-    projects: list[Project] = []
+    unique: list[Path] = []
     seen: set[str] = set()
     for path in candidates:
-        real = str(path)
+        try:
+            real = str(path.resolve())
+        except OSError:
+            real = str(path)
         if real in seen:
             continue
         seen.add(real)
+        unique.append(path)
+
+    ids = project_ids(unique)
+    projects: list[Project] = []
+    for path in unique:
+        project_id, name = ids[path]
         try:
-            project = scan_project(path, with_git=with_git)
-        except OSError as exc:
-            log.warning("cannot scan %s: %s", path, exc)
+            project = scan_project(path, project_id=project_id, name=name, with_git=with_git)
+        except Exception as exc:
+            # Still listed, with the reason attached: a project that vanishes from
+            # the board looks like a project that was never configured.
+            log.warning("cannot scan %s: %s", path, exc, exc_info=True)
+            projects.append(
+                Project(id=project_id, name=name, path=str(path), error=f"scan failed: {exc}")
+            )
             continue
         if project:
             projects.append(project)

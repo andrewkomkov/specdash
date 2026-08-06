@@ -41,6 +41,7 @@ class Hub:
                 settings.roots,
                 explicit=settings.projects,
                 with_git=settings.with_git,
+                max_depth=settings.max_depth,
             )
             self.snapshot = snapshot
         log.info(
