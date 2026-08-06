@@ -424,12 +424,20 @@ def parse_spec(text: str) -> SpecInfo:
             target = info.success_criteria
         if target is None:
             continue
-        scope = [s, *subsections(sections, s)]
-        for sub in scope:
+        # A `## Requirements` section and its own `### Functional Requirements`
+        # subsection both match this loop, so the same bullet is reached twice —
+        # keep the first occurrence of each id.
+        seen = {r.id for r in target}
+        for sub in [s, *subsections(sections, s)]:
             for bullet in sub.bullets():
                 rm = REQUIREMENT_RE.match(bullet)
-                if rm:
-                    target.append(Requirement(id=rm.group(1).upper(), text=rm.group(2).strip()))
+                if not rm:
+                    continue
+                req_id = rm.group(1).upper()
+                if req_id in seen:
+                    continue
+                seen.add(req_id)
+                target.append(Requirement(id=req_id, text=rm.group(2).strip()))
 
     edge = find_section(sections, "edge case")
     if edge:
