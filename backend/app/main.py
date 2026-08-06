@@ -13,9 +13,9 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import scanner
+from . import history, scanner
 from .config import settings
-from .models import STAGE_LABELS, STAGES, Snapshot
+from .models import STAGE_LABELS, STAGES, ProjectHistory, Snapshot
 
 logging.basicConfig(
     level=os.getenv("SPECDASH_LOG_LEVEL", "INFO"),
@@ -224,6 +224,29 @@ async def feature_commits(project_id: str, feature_id: str) -> dict:
         scanner.feature_commits, Path(project.path), f"specs/{feature_id}"
     )
     return {"commits": [c.model_dump() for c in commits]}
+
+
+@app.get("/api/projects/{project_id}/history")
+async def project_history(project_id: str) -> dict:
+    """Task completion per commit, plus the features gone quietest.
+
+    On demand only, and cached against HEAD: walking history is far too expensive
+    to do during the rescan that follows every save.
+    """
+    project = _find_project(project_id)
+    if not settings.with_git:
+        return ProjectHistory(
+            project_id=project_id,
+            reason="git reading is switched off (SPECDASH_GIT=0)",
+        ).model_dump()
+    result = await asyncio.to_thread(
+        history.project_history,
+        Path(project.path),
+        project.id,
+        limit=settings.history_commits,
+        titles={f.id: f.title for f in project.features},
+    )
+    return result.model_dump()
 
 
 @app.get("/api/projects/{project_id}/constitution")

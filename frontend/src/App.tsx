@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Alert,
   AppShell,
   Badge,
   Box,
@@ -8,6 +9,7 @@ import {
   Indicator,
   Loader,
   Progress,
+  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -17,25 +19,33 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue, useLocalStorage } from '@mantine/hooks'
 import {
+  IconAlertTriangle,
   IconLayoutKanban,
   IconMoon,
   IconRefresh,
   IconSearch,
   IconSun,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { Board } from './components/Board'
-import { FeatureDrawer } from './components/FeatureDrawer'
 import type { Feature } from './types'
 import { useSnapshot } from './useSnapshot'
 import { projectColor, relativeTime } from './utils'
 import classes from './App.module.css'
+
+// Both pull in weight nobody needs for the first paint of the board: the drawer
+// drags in the whole markdown renderer, the trend view is a second screen.
+const FeatureDrawer = lazy(() =>
+  import('./components/FeatureDrawer').then((m) => ({ default: m.FeatureDrawer })),
+)
+const Trend = lazy(() => import('./components/Trend').then((m) => ({ default: m.Trend })))
 
 export default function App() {
   const { snapshot, connection, reason, recent, refresh } = useSnapshot()
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const [query, setQuery] = useState('')
   const [debounced] = useDebouncedValue(query, 150)
+  const [view, setView] = useState<'board' | 'trend'>('board')
   const [hidden, setHidden] = useLocalStorage<string[]>({
     key: 'specdash-hidden-projects',
     defaultValue: [],
@@ -82,6 +92,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [refresh])
 
+  const broken = visibleProjects.filter((p) => p.error)
+
   const totals = features.reduce(
     (acc, f) => ({ done: acc.done + f.progress.done, total: acc.total + f.progress.total }),
     { done: 0, total: 0 },
@@ -119,6 +131,15 @@ export default function App() {
           </Group>
 
           <Group gap="xs" wrap="nowrap">
+            <SegmentedControl
+              size="xs"
+              value={view}
+              onChange={(v) => setView(v as 'board' | 'trend')}
+              data={[
+                { value: 'board', label: 'Доска' },
+                { value: 'trend', label: 'Динамика' },
+              ]}
+            />
             <TextInput
               id="specdash-search"
               size="xs"
@@ -149,15 +170,17 @@ export default function App() {
                 <Tooltip
                   key={project.id}
                   withArrow
+                  multiline
+                  w={project.error ? 340 : undefined}
                   label={`${project.path}${project.branch ? ` · ${project.branch}` : ''}${
                     project.constitution_version ? ` · constitution ${project.constitution_version}` : ''
-                  }`}
+                  }${project.error ? `\n⚠ ${project.error}` : ''}`}
                 >
                   <Chip
                     size="xs"
                     radius="sm"
                     checked={active}
-                    color={projectColor(project.id)}
+                    color={project.error ? 'red' : projectColor(project.id)}
                     onChange={() =>
                       setHidden((current) =>
                         active ? [...current, project.id] : current.filter((id) => id !== project.id),
@@ -218,16 +241,45 @@ export default function App() {
             </Text>
           </Stack>
         ) : (
-          <Board
-            features={features}
-            showProject={visibleProjects.length > 1}
-            recent={recent}
-            onOpen={(f) => setSelected({ project: f.project_id, feature: f.id })}
-          />
+          <>
+            {broken.length > 0 && (
+              <Box px="lg" pt="md">
+                <Alert
+                  color="red"
+                  variant="light"
+                  radius="md"
+                  icon={<IconAlertTriangle size={16} />}
+                  title={`${broken.length} проект(а) прочитаны не полностью`}
+                >
+                  <Stack gap={2}>
+                    {broken.map((project) => (
+                      <Text size="xs" key={project.id}>
+                        <b>{project.name}</b> — {project.error}
+                      </Text>
+                    ))}
+                  </Stack>
+                </Alert>
+              </Box>
+            )}
+            {view === 'board' ? (
+              <Board
+                features={features}
+                showProject={visibleProjects.length > 1}
+                recent={recent}
+                onOpen={(f) => setSelected({ project: f.project_id, feature: f.id })}
+              />
+            ) : (
+              <Suspense fallback={<Loader size="sm" m="lg" />}>
+                <Trend projects={visibleProjects} />
+              </Suspense>
+            )}
+          </>
         )}
       </AppShell.Main>
 
-      <FeatureDrawer feature={openFeature} onClose={() => setSelected(null)} />
+      <Suspense fallback={null}>
+        <FeatureDrawer feature={openFeature} onClose={() => setSelected(null)} />
+      </Suspense>
     </AppShell>
   )
 }
