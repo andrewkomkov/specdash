@@ -10,11 +10,12 @@ description: "Task list for the SpecDash live board"
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md),
 [data-model.md](./data-model.md), [contracts/http-api.md](./contracts/http-api.md)
 
-**Tests**: Parser tests are required and are not yet written — see Phase 8. The parser is
-currently verified by running it against every real project in the author's mounted root,
-which is where every bug so far has come from, but that is a manual gate and it does not
-survive a refactor. The tasks are listed unticked rather than omitted, because a checkbox
-is a claim about the code and there is nothing to claim yet.
+**Tests**: Unit tests for the parser are required and are not yet written — see Phase 8.
+CI now scans this repository on every push and asserts stage, stories and de-duplicated
+requirements, and the image job asserts the read-only mount, so the two properties most
+expensive to get wrong are covered. That is a smoke gate over one document set, not a
+substitute for fixtures capturing the drift in `research.md`, so the fixture tasks stay
+unticked — a checkbox is a claim about the code.
 
 **Ticked against the code on 2026-08-06.** Everything marked done exists and runs in the
 container; US5 and the test phase are genuinely outstanding.
@@ -149,7 +150,7 @@ mounted project from inside the container.
 - [x] T058 [P] [US4] Write `.env.example` with a placeholder path, not the author's own
 - [x] T059 [P] [US4] Write the README — what it is, one-command run, configuration table, the read-only guarantee and how to verify it
 - [x] T060 [P] [US4] Add the MIT licence
-- [x] T074 [US4] Publish a multi-arch image (amd64 + arm64) as `andrewkomkov/specdash`, and default `docker-compose.yml` to it so the published image is the path of least resistance
+- [x] T074 [US4] Publish a multi-arch image (amd64 + arm64) to `ghcr.io/andrewkomkov/specdash`, and default `docker-compose.yml` to it so the published image is the path of least resistance
 
 **Checkpoint**: A stranger can run it against their own repositories in one command.
 
@@ -178,8 +179,11 @@ under git; a project without git says history is unavailable.
 - [ ] T067 [P] Add a test asserting stage derivation prefers artefacts over a contradicting status line
 - [ ] T068 [P] Add a test asserting `doc?file=../../etc/passwd` is refused
 - [ ] T069 [P] Add a read-only regression test: checksum a fixture tree, run a full scan against it, checksum again, assert equality
-- [ ] T070 Add CI running the backend tests and the frontend typecheck and build
-- [ ] T075 Build and push the image from CI on a tag, so the published image cannot drift from the source it claims to be
+- [x] T070 Add CI — frontend typecheck and build, backend compile, and a scan of this repository asserting stage, stories and de-duplicated requirements
+- [x] T075 Build and push the image from CI on a release, so the published image cannot drift from the source it claims to be
+- [x] T076 Assert the read-only guarantee in CI: run the image against the checkout mounted `:ro` and fail the build if a write into it succeeds
+- [x] T077 Adopt release-please — conventional commits drive the version, the changelog and the release that triggers the image publish
+- [ ] T078 Publish to ghcr rather than Docker Hub, so releasing needs no long-lived registry secret; the package must be made public once after the first push
 - [ ] T071 Split the frontend bundle — it is one 600 kB chunk today, which is fine locally and lazy elsewhere
 - [ ] T072 Handle two projects with the same directory name under different parents, which currently collide on `id`
 - [ ] T073 Show a project-level error state on the board when a project scans with `error` set, instead of only logging it

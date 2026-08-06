@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend typecheck & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: frontend
+
+      # `npm run build` runs `tsc -b` first, so this is the typecheck too.
+      - run: npm run build
+        working-directory: frontend
+
+  backend:
+    name: Backend import & parse check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+        working-directory: backend
+
+      - run: python -m compileall -q app
+        working-directory: backend
+
+      # This repository is itself a spec-kit project, so the scanner has a real
+      # fixture without one being invented: parse it and assert what it must find.
+      - name: Scan this repository with the scanner
+        working-directory: backend
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from app import scanner
+
+          snapshot = scanner.scan_all([Path("..").resolve().parent], with_git=False)
+          projects = {p.id: p for p in snapshot.projects}
+          assert projects, "discovery found no spec-kit project in the checkout"
+
+          project = next(p for p in projects.values() if p.features)
+          feature = next(f for f in project.features if f.id.startswith("001-spec-kit"))
+          assert feature.progress.total > 50, feature.progress
+          assert feature.user_stories, "no user stories parsed from spec.md"
+          assert feature.requirements, "no requirements parsed from spec.md"
+          ids = [r.id for r in feature.requirements]
+          assert len(ids) == len(set(ids)), f"requirements counted twice: {ids}"
+          assert feature.stage in {"implement", "done"}, feature.stage_reason
+          print(f"{feature.id}: {feature.stage} ({feature.stage_reason}), "
+                f"{len(ids)} requirements, {len(feature.user_stories)} stories")
+          PY
+
+  image:
+    name: Image build & smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: specdash:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Mount the checkout read-only, exactly as the compose file does, and assert
+      # the service comes up and finds this repository's own spec-kit project.
+      - name: Smoke test
+        run: |
+          docker run -d --name specdash-ci -p 8420:8420 \
+            -v "${{ github.workspace }}:/projects/specdash:ro" \
+            -e WATCHFILES_FORCE_POLLING=1 \
+            specdash:ci
+
+          for i in $(seq 1 30); do
+            if curl -fsS localhost:8420/api/health > /dev/null 2>&1; then break; fi
+            sleep 2
+          done
+
+          curl -fsS localhost:8420/api/health | tee /tmp/health.json
+          python3 - <<'PY'
+          import json
+          health = json.load(open("/tmp/health.json"))
+          assert health["ok"] and health["projects"] >= 1, health
+          PY
+
+          # The read-only guarantee is the constitution's first principle; assert it
+          # rather than trusting the compose file to keep saying `:ro`.
+          if docker exec specdash-ci sh -c 'touch /projects/specdash/PROOF' 2>/dev/null; then
+            echo "FAIL: wrote into a mounted project" && exit 1
+          fi
+          echo "mount is read-only, as required"
+
+          curl -fsS localhost:8420/ | grep -q "<div id=\"root\">"
+          echo "frontend is served"
+
+      - name: Container logs
+        if: always()
+        run: docker logs specdash-ci || true
+
+      - name: Stop
+        if: always()
+        run: docker rm -f specdash-ci || true

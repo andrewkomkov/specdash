@@ -17,13 +17,14 @@ open http://localhost:8420
 One image. One port. No configuration per project, no database, no internet.
 
 Or without cloning anything, straight from the published image
-([`andrewkomkov/specdash`](https://hub.docker.com/r/andrewkomkov/specdash), amd64 + arm64):
+([`ghcr.io/andrewkomkov/specdash`](https://github.com/andrewkomkov/specdash/pkgs/container/specdash),
+amd64 + arm64, built and pushed by CI on every release):
 
 ```bash
 docker run -d --name specdash -p 8420:8420 \
   -v "$HOME/projects:/projects:ro" \
   -e WATCHFILES_FORCE_POLLING=1 \
-  andrewkomkov/specdash:latest
+  ghcr.io/andrewkomkov/specdash:latest
 ```
 
 ## What it shows

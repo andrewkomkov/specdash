@@ -1,7 +1,7 @@
 services:
   specdash:
-    # Published image; comment `image` out (or run `docker compose build`) to build locally.
-    image: ${SPECDASH_IMAGE:-andrewkomkov/specdash:latest}
+    # Published image; `docker compose build` overrides it with a local build.
+    image: ${SPECDASH_IMAGE:-ghcr.io/andrewkomkov/specdash:latest}
     build: .
     container_name: specdash
     ports:
