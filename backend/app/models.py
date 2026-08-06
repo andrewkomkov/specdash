@@ -118,6 +118,47 @@ class Commit(BaseModel):
     relative: str
 
 
+class HistoryPoint(BaseModel):
+    """Task completion of a whole project as of one commit."""
+
+    sha: str
+    date: str  # ISO 8601, author date
+    subject: str
+    done: int = 0
+    total: int = 0
+    features: int = 0  # how many tasks.md files existed at that revision
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def pct(self) -> int:
+        return round(100 * self.done / self.total) if self.total else 0
+
+
+class StaleFeature(BaseModel):
+    """A feature folder no commit has touched in a while."""
+
+    feature_id: str
+    title: str | None = None
+    date: str
+    days: int
+    subject: str | None = None
+
+
+class ProjectHistory(BaseModel):
+    """Movement rather than position, derived from git rather than a database.
+
+    `available` is false — with a reason worth reading — whenever no series can
+    honestly be drawn, so the board can say so instead of drawing nothing.
+    """
+
+    project_id: str
+    available: bool = False
+    reason: str | None = None
+    points: list[HistoryPoint] = Field(default_factory=list)
+    stale: list[StaleFeature] = Field(default_factory=list)
+    commits_scanned: int = 0
+
+
 class Feature(BaseModel):
     id: str  # directory name, e.g. 005-live-activities
     project_id: str

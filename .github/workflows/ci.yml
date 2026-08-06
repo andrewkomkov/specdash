@@ -35,23 +35,31 @@ jobs:
         working-directory: frontend
 
   backend:
-    name: Backend import & parse check
+    name: Backend tests & parse check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The read-only regression test and the history walk both need real
+          # history, not the single commit a default checkout provides.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: backend/requirements-dev.txt
 
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
         working-directory: backend
 
       - run: python -m compileall -q app
         working-directory: backend
+
+      - name: Unit tests
+        working-directory: backend
+        run: python -m pytest
 
       # This repository is itself a spec-kit project, so the scanner has a real
       # fixture without one being invented: parse it and assert what it must find.
@@ -59,8 +67,9 @@ jobs:
         working-directory: backend
         run: |
           python - <<'PY'
+          from datetime import datetime
           from pathlib import Path
-          from app import scanner
+          from app import history, scanner
 
           snapshot = scanner.scan_all([Path("..").resolve().parent], with_git=False)
           projects = {p.id: p for p in snapshot.projects}
@@ -76,6 +85,17 @@ jobs:
           assert feature.stage in {"implement", "done"}, feature.stage_reason
           print(f"{feature.id}: {feature.stage} ({feature.stage_reason}), "
                 f"{len(ids)} requirements, {len(feature.user_stories)} stories")
+
+          # The trend view reconstructs the series from git; this checkout is the
+          # only real git history CI has, so assert against it rather than a fixture.
+          series = history.project_history(Path("..").resolve(), project.id)
+          assert series.available, series.reason
+          assert series.points, "no commit produced a countable tasks.md"
+          dates = [datetime.fromisoformat(p.date) for p in series.points]
+          assert dates == sorted(dates), "the series must read oldest to newest"
+          last = series.points[-1]
+          assert last.total >= feature.progress.total, (last.total, feature.progress.total)
+          print(f"history: {len(series.points)} point(s), latest {last.done}/{last.total}")
           PY
 
   image:

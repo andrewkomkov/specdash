@@ -310,7 +310,21 @@ USER_STORY_RE = re.compile(
 # Matched against an already-folded, emphasis-stripped bullet, so the id keeps
 # its optional letter suffix (SC-005a) and the text keeps its wrapped remainder.
 REQUIREMENT_RE = re.compile(r"^((?:FR|NFR|SC|SR|PR|CR)-?\d{1,3}[a-z]?)\s*[:.]?\s+(.*)$", re.I)
+REQUIREMENT_ID_RE = re.compile(r"^([A-Za-z]{2,3})(-?)(\d{1,3})([a-zA-Z]?)$")
 ORDERED_RE = re.compile(r"^\s*(\d+)\.\s+(.*)$")
+
+
+def requirement_id(raw: str) -> str:
+    """Normalise the case of a requirement id without rewriting it.
+
+    Upper-casing the whole token turns `SC-005a` into `SC-005A`, which is not what
+    the document says — and the id is the thing a reader matches against the spec
+    in front of them. The prefix is normalised, the suffix letter is not.
+    """
+    m = REQUIREMENT_ID_RE.match(raw)
+    if not m:
+        return raw.upper()
+    return f"{m.group(1).upper()}{m.group(2)}{m.group(3)}{m.group(4).lower()}"
 
 
 @dataclass
@@ -433,7 +447,7 @@ def parse_spec(text: str) -> SpecInfo:
                 rm = REQUIREMENT_RE.match(bullet)
                 if not rm:
                     continue
-                req_id = rm.group(1).upper()
+                req_id = requirement_id(rm.group(1))
                 if req_id in seen:
                     continue
                 seen.add(req_id)

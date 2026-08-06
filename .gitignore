@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+
+# a build artefact, regenerated on every `npm run build`
+frontend/tsconfig.tsbuildinfo

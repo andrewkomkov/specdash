@@ -48,6 +48,12 @@ folder.
 **It updates itself.** Run `/speckit-tasks` in one window with the board open in another:
 progress moves, cards change column, and whatever just changed pulses.
 
+**Switch to Динамика** for movement rather than position: task completion per commit for
+each project, read straight out of `git log` — no database, nothing stored. The dashed line
+is the total, because work being added is half the story and a chart of percentages alone
+hides it. Underneath, the feature folders no commit has touched in longest. A project that
+is not under git says so plainly instead of showing an empty chart.
+
 ## Read-only, structurally
 
 The projects you point it at are your real work. SpecDash treats them as someone else's:
@@ -84,6 +90,7 @@ All of it is optional except the first line.
 | `SPECDASH_POLLING` | `1` | poll for changes instead of using inotify — required on macOS and Windows, where bind mounts do not deliver inotify events |
 | `SPECDASH_POLL_DELAY_MS` | `800` | polling interval |
 | `SPECDASH_GIT` | `1` | read branch and history with git |
+| `SPECDASH_HISTORY_COMMITS` | `200` | how far back the trend view walks |
 | `SPECDASH_ROOTS` | `/projects` | scan roots inside the container |
 | `SPECDASH_PROJECTS` | — | explicit project paths, instead of or alongside discovery |
 
@@ -93,11 +100,17 @@ there is nothing to register, and it appears without a restart.
 ## Development
 
 ```bash
-cd backend && pip install -r requirements.txt
+cd backend && pip install -r requirements-dev.txt
 SPECDASH_ROOTS=$HOME/projects uvicorn app.main:app --reload --port 8420
+python -m pytest                             # parsers, scanner, HTTP surface
 
 cd frontend && npm install && npm run dev    # :5173, proxies /api and /ws
 ```
+
+The tests are fixtures of the drift found in real spec-kit output — wrapped values,
+`SC-005a`, checkboxes in sections that are not tasks, a `tasks.md` with no ids at all —
+plus the two properties most expensive to get wrong: that a spec's prose never outranks its
+task list, and that a full scan leaves the scanned tree byte for byte identical.
 
 Backend is FastAPI + pydantic + watchfiles; frontend is React 19 + Mantine 8 + Vite. The
 domain model lives in `backend/app/models.py` and is mirrored in `frontend/src/types.ts`.
@@ -112,12 +125,24 @@ research and task list, and [`.specify/memory/constitution.md`](.specify/memory/
 for the rules the code is held to. Point it at the folder containing this repository and it
 will show you itself.
 
+## Releasing
+
+Conventional commits on `main` drive a rolling release-please pull request; merging it tags
+the release, which is what builds and pushes the multi-arch image. The registry is ghcr, so
+publishing authenticates with the workflow's own token and there is no long-lived registry
+secret anywhere in this repository.
+
+One manual step exists and only once, after the first push: the package starts private, and
+has to be switched to public under **Packages → specdash → Package settings** for
+`docker run ghcr.io/andrewkomkov/specdash:latest` to work without a login.
+
 ## Status
 
-User stories 1–4 are shipped: the board, the detail drawer, live updates, and the
-one-command read-only container. US5 (progress over time from git history) and the parser
-test suite are outstanding — they are listed as unticked tasks in
-[`tasks.md`](specs/001-spec-kit-live-board/tasks.md) rather than quietly omitted.
+All five user stories are shipped: the board, the detail drawer, live updates, the
+one-command read-only container, and progress over time from git history. Every task in
+[`tasks.md`](specs/001-spec-kit-live-board/tasks.md) is ticked, and a checkbox there is a
+claim about the code — the CI job in [`ci.yml`](.github/workflows/ci.yml) scans this
+repository on every push and fails if the claim stops holding.
 
 ## Licence
 

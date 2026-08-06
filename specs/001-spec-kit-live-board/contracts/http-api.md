@@ -61,6 +61,61 @@ Empty list when the project is not a git repository or nothing has touched that 
 on demand only — never during a scan, because a git process per feature would dominate the
 rescan that follows every save.
 
+## GET /api/projects/{project_id}/history
+
+Task completion over time for a whole project, reconstructed from git. On demand only,
+and cached against `HEAD`: walking history is far too expensive to do during the rescan
+that follows every save.
+
+```json
+{
+  "project_id": "GreenPods",
+  "available": true,
+  "reason": null,
+  "commits_scanned": 24,
+  "points": [
+    {
+      "sha": "9f1c0de…",
+      "date": "2026-08-03T11:02:41+02:00",
+      "subject": "feat: heart rate over the Apple protocol",
+      "done": 128,
+      "total": 128,
+      "features": 2,
+      "pct": 100
+    }
+  ],
+  "stale": [
+    {
+      "feature_id": "003-heart-rate",
+      "title": "Heart rate",
+      "date": "2026-08-04T18:20:03+02:00",
+      "days": 2,
+      "subject": "docs: record the audit"
+    }
+  ]
+}
+```
+
+- one `point` per commit that touched `specs/`, **oldest first**, counting every `tasks.md`
+  as it stood at that revision with the same parser the board uses — a point and a card can
+  never disagree about what a checkbox means;
+- a revision holding no countable task is not a point, rather than a zero;
+- `total` moves too. Work being added is the other half of the story, and a chart of
+  percentages alone hides it;
+- `stale` is the feature directories no commit has touched in longest, newest-commit date
+  and age in days, limited to six and to features that still exist on disk;
+- `available` is `false` — with a `reason` worth reading — whenever no series can honestly
+  be drawn: the project is not a git repository, has no commits, nothing has touched
+  `specs/`, no `tasks.md` was ever committed, or `SPECDASH_GIT=0`. The board states the
+  reason instead of drawing an empty chart, because an empty chart reads as "no progress".
+
+Numbers here are as of the last commit, so they differ from the board whenever something
+is written but not yet committed. That is the point of the endpoint and not a defect.
+
+`SPECDASH_HISTORY_COMMITS` (default 200) bounds the walk. Two `git cat-file` batches do the
+whole thing regardless of length, and blobs are cached by object id, so the usual case —
+one new commit — reparses one file.
+
 ## GET /api/projects/{project_id}/constitution
 
 `text/plain` of `.specify/memory/constitution.md`, or `404` when the project has none.

@@ -20,6 +20,7 @@ class Settings:
         self.with_git: bool = os.getenv("SPECDASH_GIT", "1") not in ("0", "false", "no")
         self.debounce_ms: int = int(os.getenv("SPECDASH_DEBOUNCE_MS", "400"))
         self.poll_seconds: float = float(os.getenv("SPECDASH_POLL_SECONDS", "0"))
+        self.history_commits: int = int(os.getenv("SPECDASH_HISTORY_COMMITS", "200"))
         self.static_dir: Path = Path(os.getenv("SPECDASH_STATIC", "/app/static"))
         self.title: str = os.getenv("SPECDASH_TITLE", "SpecDash")
 

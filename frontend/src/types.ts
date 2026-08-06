@@ -156,6 +156,33 @@ export interface Project {
   error: string | null
 }
 
+export interface HistoryPoint {
+  sha: string
+  date: string
+  subject: string
+  done: number
+  total: number
+  features: number
+  pct: number
+}
+
+export interface StaleFeature {
+  feature_id: string
+  title: string | null
+  date: string
+  days: number
+  subject: string | null
+}
+
+export interface ProjectHistory {
+  project_id: string
+  available: boolean
+  reason: string | null
+  points: HistoryPoint[]
+  stale: StaleFeature[]
+  commits_scanned: number
+}
+
 export interface Snapshot {
   generated_at: number
   root: string

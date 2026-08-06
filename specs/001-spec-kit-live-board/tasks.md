@@ -10,15 +10,15 @@ description: "Task list for the SpecDash live board"
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md),
 [data-model.md](./data-model.md), [contracts/http-api.md](./contracts/http-api.md)
 
-**Tests**: Unit tests for the parser are required and are not yet written — see Phase 8.
-CI now scans this repository on every push and asserts stage, stories and de-duplicated
-requirements, and the image job asserts the read-only mount, so the two properties most
-expensive to get wrong are covered. That is a smoke gate over one document set, not a
-substitute for fixtures capturing the drift in `research.md`, so the fixture tasks stay
-unticked — a checkbox is a claim about the code.
+**Tests**: `backend/tests/` holds fixtures of the drift catalogued in `research.md` and
+runs in CI alongside the scan of this repository and the image job's read-only assertion.
+Writing them found one real defect — `SC-005a` was being displayed as `SC-005A`, an id that
+matches nothing in the document a reader is holding — which is the argument for fixtures
+over a smoke gate in one line.
 
 **Ticked against the code on 2026-08-06.** Everything marked done exists and runs in the
-container; US5 and the test phase are genuinely outstanding.
+container. A checkbox here is a claim about the code, and CI fails when a claim stops
+holding.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -163,11 +163,15 @@ mounted project from inside the container.
 **Independent test**: Open the trend view and read task completion over time for a project
 under git; a project without git says history is unavailable.
 
-- [ ] T061 [US5] Walk `git log` over a project's `specs/` directory and parse each revision's `tasks.md` completion into a time series, on demand and cached in memory only
-- [ ] T062 [US5] Serve the series from a new endpoint documented in `contracts/http-api.md`
-- [ ] T063 [US5] Add a trend view to the board with completion over time per project
-- [ ] T064 [US5] Show a stale-work signal — features untouched longest — alongside the trend
-- [ ] T065 [US5] State plainly that history is unavailable for a project not under git, rather than drawing an empty chart
+- [x] T061 [US5] Walk `git log` over a project's `specs/` directory and parse each revision's `tasks.md` completion into a time series, on demand and cached in memory only
+- [x] T062 [US5] Serve the series from a new endpoint documented in `contracts/http-api.md`
+- [x] T063 [US5] Add a trend view to the board with completion over time per project
+- [x] T064 [US5] Show a stale-work signal — features untouched longest — alongside the trend
+- [x] T065 [US5] State plainly that history is unavailable for a project not under git, rather than drawing an empty chart
+- [x] T079 [US5] Plot the task total alongside the completed count — work being added is the other half of the story, and a chart of percentages alone hides it
+- [x] T080 [US5] Confine every git invocation to one module with a read-only subcommand allow-list, so the walk cannot become a write path by accident
+
+**Checkpoint**: The board can answer "is this moving", not only "where is this".
 
 ---
 
@@ -175,15 +179,18 @@ under git; a project without git says history is unavailable.
 
 **Purpose**: The things that keep the above true after the next change.
 
-- [ ] T066 [P] Add parser tests over fixtures capturing the real drift found in `research.md` — wrapped values, `SC-005a`, checkboxes in non-task sections, phase headings that name a story and a priority, a `tasks.md` with no ids at all
-- [ ] T067 [P] Add a test asserting stage derivation prefers artefacts over a contradicting status line
-- [ ] T068 [P] Add a test asserting `doc?file=../../etc/passwd` is refused
-- [ ] T069 [P] Add a read-only regression test: checksum a fixture tree, run a full scan against it, checksum again, assert equality
+- [x] T066 [P] Add parser tests over fixtures capturing the real drift found in `research.md` — wrapped values, `SC-005a`, checkboxes in non-task sections, phase headings that name a story and a priority, a `tasks.md` with no ids at all
+- [x] T067 [P] Add a test asserting stage derivation prefers artefacts over a contradicting status line
+- [x] T068 [P] Add a test asserting `doc?file=../../etc/passwd` is refused
+- [x] T069 [P] Add a read-only regression test: checksum a fixture tree, run a full scan against it, checksum again, assert equality
+- [x] T081 Preserve the case of a requirement id's letter suffix — upper-casing the whole token turned `SC-005a` into `SC-005A`, an id matching nothing in the document; found by T066
 - [x] T070 Add CI — frontend typecheck and build, backend compile, and a scan of this repository asserting stage, stories and de-duplicated requirements
 - [x] T075 Build and push the image from CI on a release, so the published image cannot drift from the source it claims to be
 - [x] T076 Assert the read-only guarantee in CI: run the image against the checkout mounted `:ro` and fail the build if a write into it succeeds
 - [x] T077 Adopt release-please — conventional commits drive the version, the changelog and the release that triggers the image publish
-- [ ] T078 Publish to ghcr rather than Docker Hub, so releasing needs no long-lived registry secret; the package must be made public once after the first push
-- [ ] T071 Split the frontend bundle — it is one 600 kB chunk today, which is fine locally and lazy elsewhere
-- [ ] T072 Handle two projects with the same directory name under different parents, which currently collide on `id`
-- [ ] T073 Show a project-level error state on the board when a project scans with `error` set, instead of only logging it
+- [x] T078 Publish to ghcr rather than Docker Hub, so releasing needs no long-lived registry secret; the one-time "make the package public" step is written down in the README rather than left in someone's memory
+- [x] T071 Split the frontend bundle — the markdown renderer and the trend view now load when they are first reached, not on first paint
+- [x] T072 Handle two projects with the same directory name under different parents, which currently collide on `id`
+- [x] T073 Show a project-level error state on the board when a project scans with `error` set, instead of only logging it
+- [x] T082 Run the backend test suite in CI, and assert the git-derived series against this repository's own history
+- [x] T083 Honour `SPECDASH_MAX_DEPTH` in discovery — it was read from the environment, documented in the README, and then never passed to the walk
