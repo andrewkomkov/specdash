@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/andrewkomkov/specdash/compare/v0.2.0...v0.3.0) (2026-08-07)
+
+
+### Features
+
+* lay the board out by user story as well as by feature ([0e7e9fe](https://github.com/andrewkomkov/specdash/commit/0e7e9fe559a9585aee77e7928258327283bc0ba8))
+
+
+### Bug Fixes
+
+* say what the per-story task counter counts ([0143c50](https://github.com/andrewkomkov/specdash/commit/0143c505fd66184430b06276bbd04882bc0a8fec))
+
 ## [0.2.0](https://github.com/andrewkomkov/specdash/compare/v0.1.1...v0.2.0) (2026-08-07)
 
 
