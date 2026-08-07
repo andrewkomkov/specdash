@@ -30,7 +30,7 @@ visible to a unit test with a mocked component.
 
 - [x] T006 [US2] Bump `vite` to 8 and `@vitejs/plugin-react` to 6 **in one change** — either alone deadlocks on the other's peer range
 - [x] T007 [US2] Confirm `manualChunks` survives rolldown by comparing emitted chunk names before and after
-- [x] T008 [US2] Hold `typescript` at 5.8 and record why beside the pin, with the upstream issue
+- [x] T008 [US2] Hold `typescript` back from 7.0 with a narrow range ignore, not a major-wide one, and record why beside it with the upstream issue — the range left 6.0.3 reachable, which dependabot then proposed and which merged green (#35), so the frontend is on TypeScript 6 rather than stuck on 5.8
 
 ## Phase 3: User Story 3 — Coupled packages arrive coupled (Priority: P3)
 
