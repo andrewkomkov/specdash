@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/andrewkomkov/specdash/compare/v0.6.1...v0.6.2) (2026-08-07)
+
+
+### Documentation
+
+* record that typescript 6 landed after the narrow hold ([#38](https://github.com/andrewkomkov/specdash/issues/38)) ([f60fa1c](https://github.com/andrewkomkov/specdash/commit/f60fa1c8f5c78eadd40a3980a4cee6b614c669a0))
+
 ## [0.6.1](https://github.com/andrewkomkov/specdash/compare/v0.6.0...v0.6.1) (2026-08-07)
 
 
