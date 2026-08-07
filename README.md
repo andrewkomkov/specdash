@@ -53,7 +53,9 @@ several projects are open at once. *Истории* is one card per user story, 
 own ticked tasks rather than by its feature's, which is what you want when a handful of
 features would otherwise leave the columns nearly empty. Setup, foundational and polish
 tasks name no story, so they get a card of their own — without it the column totals would
-quietly stop adding up. The choice is remembered between visits.
+quietly stop adding up. The choice is remembered between visits, and the header total
+follows it: it counts the cards on screen, so it and the badge beside it always describe
+the same set.
 
 **Switch to Динамика** for movement rather than position: task completion per commit for
 each project, read straight out of `git log` — no database, nothing stored. The dashed line

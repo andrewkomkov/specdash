@@ -125,10 +125,24 @@ export default function App() {
 
   const broken = visibleProjects.filter((p) => p.error)
 
-  const totals = features.reduce(
-    (acc, f) => ({ done: acc.done + f.progress.done, total: acc.total + f.progress.total }),
-    { done: 0, total: 0 },
-  )
+  // Summed over the cards on screen, so the total and the badge beside it always
+  // describe the same set. Without a search the two grains agree by construction —
+  // a feature's stories plus its leftover bucket are its task total — so this only
+  // moves under a filter, which is the case it exists for. The trend keeps the
+  // feature sum: it is drawn per project, not per story.
+  const totals = useMemo(() => {
+    const start = { done: 0, total: 0 }
+    if (view === 'stories') {
+      return storyRows.reduce(
+        (acc, row) => ({ done: acc.done + row.story.done, total: acc.total + row.story.total }),
+        start,
+      )
+    }
+    return features.reduce(
+      (acc, f) => ({ done: acc.done + f.progress.done, total: acc.total + f.progress.total }),
+      start,
+    )
+  }, [view, features, storyRows])
   const pct = totals.total ? Math.round((100 * totals.done) / totals.total) : 0
 
   return (
@@ -232,15 +246,24 @@ export default function App() {
 
           <Group gap="md" wrap="nowrap">
             {totals.total > 0 && (
-              <Group gap={8} wrap="nowrap" w={230}>
-                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                  {totals.done}/{totals.total} задач
-                </Text>
-                <Progress value={pct} size="sm" radius="xl" color="teal" style={{ flex: 1 }} />
-                <Text size="xs" fw={700} w={32} ta="right">
-                  {pct}%
-                </Text>
-              </Group>
+              <Tooltip
+                withArrow
+                label={
+                  view === 'stories'
+                    ? 'задачи показанных историй'
+                    : 'задачи показанных фич'
+                }
+              >
+                <Group gap={8} wrap="nowrap" w={230}>
+                  <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                    {totals.done}/{totals.total} задач
+                  </Text>
+                  <Progress value={pct} size="sm" radius="xl" color="teal" style={{ flex: 1 }} />
+                  <Text size="xs" fw={700} w={32} ta="right">
+                    {pct}%
+                  </Text>
+                </Group>
+              </Tooltip>
             )}
             <Badge variant="default" radius="sm" size="sm">
               {view === 'stories' ? `${storyRows.length} историй` : `${features.length} фич`}
