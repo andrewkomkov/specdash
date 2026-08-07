@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/andrewkomkov/specdash/compare/v0.4.0...v0.4.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* flatten emphasis in summaries and keep field lines out of them ([7fe26b1](https://github.com/andrewkomkov/specdash/commit/7fe26b1acb5a15a454977de3d40724c480d77047))
+
 ## [0.4.0](https://github.com/andrewkomkov/specdash/compare/v0.3.1...v0.4.0) (2026-08-07)
 
 
