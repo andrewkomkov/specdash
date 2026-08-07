@@ -1,8 +1,11 @@
 import { Badge, Box, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
+import type { ReactNode } from 'react'
 import type { Feature, Stage } from '../types'
 import { STAGE_COLOR, STAGE_HINT, STAGE_LABEL, STAGES } from '../types'
 import { FeatureCard } from './FeatureCard'
+import { StoryCard } from './StoryCard'
+import type { StoryRow } from './StoryCard'
 import classes from './Board.module.css'
 
 interface Props {
@@ -13,43 +16,88 @@ interface Props {
 }
 
 export function Board({ features, showProject, recent, onOpen }: Props) {
-  const columns = STAGES.map((stage) => ({
-    stage,
-    items: features.filter((f) => f.stage === stage),
-  }))
-
   return (
     <Box className={classes.board}>
-      {columns.map(({ stage, items }) => (
-        <Column
-          key={stage}
-          stage={stage}
-          items={items}
-          showProject={showProject}
-          recent={recent}
-          onOpen={onOpen}
-        />
-      ))}
+      {STAGES.map((stage) => {
+        const items = features.filter((f) => f.stage === stage)
+        return (
+          <Column
+            key={stage}
+            stage={stage}
+            count={items.length}
+            done={items.reduce((sum, f) => sum + f.progress.done, 0)}
+            total={items.reduce((sum, f) => sum + f.progress.total, 0)}
+          >
+            {items.map((feature) => (
+              <FeatureCard
+                key={`${feature.project_id}/${feature.id}`}
+                feature={feature}
+                showProject={showProject}
+                flashing={recent.has(`${feature.project_id}/${feature.id}`)}
+                onOpen={onOpen}
+              />
+            ))}
+          </Column>
+        )
+      })}
+    </Box>
+  )
+}
+
+/** The same six columns, one card per user story rather than per feature. */
+export function StoryBoard({
+  rows,
+  showProject,
+  recent,
+  onOpen,
+}: {
+  rows: StoryRow[]
+  showProject: boolean
+  recent: Set<string>
+  onOpen: (row: StoryRow) => void
+}) {
+  return (
+    <Box className={classes.board}>
+      {STAGES.map((stage) => {
+        const items = rows.filter((r) => r.story.stage === stage)
+        return (
+          <Column
+            key={stage}
+            stage={stage}
+            count={items.length}
+            done={items.reduce((sum, r) => sum + r.story.done, 0)}
+            total={items.reduce((sum, r) => sum + r.story.total, 0)}
+          >
+            {items.map((row) => (
+              <StoryCard
+                key={row.key}
+                row={row}
+                showProject={showProject}
+                flashing={recent.has(`${row.feature.project_id}/${row.feature.id}`)}
+                onOpen={onOpen}
+              />
+            ))}
+          </Column>
+        )
+      })}
     </Box>
   )
 }
 
 function Column({
   stage,
-  items,
-  showProject,
-  recent,
-  onOpen,
+  count,
+  done,
+  total,
+  children,
 }: {
   stage: Stage
-  items: Feature[]
-  showProject: boolean
-  recent: Set<string>
-  onOpen: (feature: Feature) => void
+  count: number
+  done: number
+  total: number
+  children: ReactNode
 }) {
   const color = STAGE_COLOR[stage]
-  const tasks = items.reduce((sum, f) => sum + f.progress.total, 0)
-  const done = items.reduce((sum, f) => sum + f.progress.done, 0)
 
   return (
     <Box className={classes.column} data-stage={stage}>
@@ -61,7 +109,7 @@ function Column({
               {STAGE_LABEL[stage]}
             </Text>
             <Badge size="xs" variant="light" color={color} radius="sm">
-              {items.length}
+              {count}
             </Badge>
           </Group>
           <Tooltip label={STAGE_HINT[stage]} withArrow multiline w={220}>
@@ -70,25 +118,17 @@ function Column({
             </ThemeIcon>
           </Tooltip>
         </Group>
-        {tasks > 0 && (
+        {total > 0 && (
           <Text size="10px" c="dimmed" mt={2}>
-            {done}/{tasks} задач в колонке
+            {done}/{total} задач в колонке
           </Text>
         )}
       </Box>
 
       <ScrollArea.Autosize mah="calc(100vh - 210px)" type="hover" scrollbarSize={6}>
         <Stack gap="sm" p={3} pb="md">
-          {items.map((feature) => (
-            <FeatureCard
-              key={`${feature.project_id}/${feature.id}`}
-              feature={feature}
-              showProject={showProject}
-              flashing={recent.has(`${feature.project_id}/${feature.id}`)}
-              onOpen={onOpen}
-            />
-          ))}
-          {items.length === 0 && (
+          {children}
+          {count === 0 && (
             <Box className={classes.empty}>
               <Text size="xs" c="dimmed">
                 пусто

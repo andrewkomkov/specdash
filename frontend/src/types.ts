@@ -77,6 +77,8 @@ export interface UserStory {
   acceptance: { index: number; text: string }[]
   done: number
   total: number
+  stage: Stage
+  stage_reason: string
 }
 
 export interface Requirement {
@@ -129,6 +131,8 @@ export interface Feature {
   checklist_progress: Progress
   artifacts: Artifact[]
   user_stories: UserStory[]
+  /** setup / foundational / polish tasks, which belong to no story */
+  unassigned: UserStory | null
   phases: Phase[]
   tasks: Task[]
   checklists: Checklist[]

@@ -44,17 +44,21 @@ import classes from './FeatureDrawer.module.css'
 
 interface Props {
   feature: Feature | null
+  /** story to expand on open, when the drawer was reached from a story card */
+  focusStory?: string | null
   onClose: () => void
 }
 
-export function FeatureDrawer({ feature, onClose }: Props) {
+export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
   const [tab, setTab] = useState<string | null>('overview')
   const [openFile, setOpenFile] = useState<string | null>(null)
 
   useEffect(() => {
-    setTab('overview')
+    // The tasks with no story have no row in the overview to expand, so that
+    // card lands on the task list instead of on a panel that ignores the click.
+    setTab(focusStory === '—' ? 'tasks' : 'overview')
     setOpenFile(feature?.artifacts.find((a) => a.key === 'spec')?.file ?? null)
-  }, [feature?.id, feature?.project_id])
+  }, [feature?.id, feature?.project_id, focusStory])
 
   if (!feature) return null
   const accent = projectColor(feature.project_id)
@@ -148,7 +152,7 @@ export function FeatureDrawer({ feature, onClose }: Props) {
 
         <Box className={classes.body}>
           <Tabs.Panel value="overview">
-            <Overview feature={feature} />
+            <Overview feature={feature} focusStory={focusStory ?? null} />
           </Tabs.Panel>
           <Tabs.Panel value="tasks">
             <TasksPanel feature={feature} />
@@ -168,7 +172,7 @@ export function FeatureDrawer({ feature, onClose }: Props) {
   )
 }
 
-function Overview({ feature }: { feature: Feature }) {
+function Overview({ feature, focusStory }: { feature: Feature; focusStory: string | null }) {
   return (
     <ScrollArea.Autosize mah="calc(100vh - 210px)" type="hover">
       <Stack gap="lg" pr="sm">
@@ -218,7 +222,13 @@ function Overview({ feature }: { feature: Feature }) {
         {feature.user_stories.length > 0 && (
           <Box>
             <SectionTitle>Пользовательские истории</SectionTitle>
-            <Accordion variant="separated" radius="md" multiple>
+            <Accordion
+              variant="separated"
+              radius="md"
+              multiple
+              defaultValue={focusStory ? [focusStory] : []}
+              key={focusStory ?? 'none'}
+            >
               {feature.user_stories.map((story) => {
                 const pct = story.total ? Math.round((100 * story.done) / story.total) : 0
                 return (
@@ -238,18 +248,23 @@ function Overview({ feature }: { feature: Feature }) {
                           {story.title}
                         </Text>
                         {story.total > 0 && (
-                          <Group gap={6} wrap="nowrap" w={140}>
-                            <Progress
-                              value={pct}
-                              color={progressColor(pct)}
-                              size="sm"
-                              radius="xl"
-                              style={{ flex: 1 }}
-                            />
-                            <Text size="xs" c="dimmed" w={42} ta="right">
-                              {story.done}/{story.total}
-                            </Text>
-                          </Group>
+                          <Tooltip
+                            withArrow
+                            label={`задачи tasks.md с тегом ${story.id}: ${story.done} из ${story.total} закрыто`}
+                          >
+                            <Group gap={6} wrap="nowrap" w={190}>
+                              <Progress
+                                value={pct}
+                                color={progressColor(pct)}
+                                size="sm"
+                                radius="xl"
+                                style={{ flex: 1 }}
+                              />
+                              <Text size="xs" c="dimmed" w={92} ta="right" style={{ whiteSpace: 'nowrap' }}>
+                                {story.done}/{story.total} задач
+                              </Text>
+                            </Group>
+                          </Tooltip>
                         )}
                       </Group>
                     </Accordion.Control>

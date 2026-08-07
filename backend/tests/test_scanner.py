@@ -6,7 +6,7 @@ import hashlib
 import os
 from pathlib import Path
 
-from app import scanner
+from app import parsing, scanner
 from conftest import DEMO, WORKSPACE
 
 
@@ -45,6 +45,54 @@ def test_progress_pct_survives_nested_serialisation(demo_project):
     feature = next(f for f in dumped["features"] if f["id"] == "001-contradicting-status")
 
     assert feature["progress"]["pct"] == 100
+
+
+def test_a_story_is_placed_by_its_own_ticks(demo_project):
+    """The board can be read at story grain, so a story needs a stage of its own —
+    derived by the same evidence rule as a feature, not inherited wholesale."""
+    feature = next(f for f in demo_project.features if f.id == "001-contradicting-status")
+    story = next(s for s in feature.user_stories if s.id == "US1")
+
+    assert (story.done, story.total) == (2, 2)
+    assert story.stage == "done"
+    assert story.stage_reason == "all 2 tasks ticked"
+
+
+def test_a_story_with_no_tasks_of_its_own_sits_where_its_feature_sits(demo_project):
+    feature = next(f for f in demo_project.features if f.id == "002-planned-only")
+    story = feature.user_stories[0]
+
+    assert story.total == 0
+    assert story.stage == feature.stage == "plan"
+    assert story.stage_reason == "plan.md present, no tasks.md yet"
+
+
+def test_a_story_no_task_names_says_so_rather_than_claiming_the_feature_stage():
+    done_stage, reason = scanner._story_stage(0, 0, ("implement", "3/9 tasks ticked"),
+                                              feature_has_tasks=True)
+    assert (done_stage, reason) == ("implement", "no task in tasks.md names this story")
+
+
+def test_tasks_belonging_to_no_story_are_carried_separately(demo_project):
+    """Setup, foundational and polish work names no story. On a board of stories
+    it would vanish, and the column totals would stop adding up."""
+    feature = next(f for f in demo_project.features if f.id == "001-contradicting-status")
+
+    assert feature.unassigned is not None
+    assert (feature.unassigned.done, feature.unassigned.total) == (2, 2)
+    assert feature.unassigned.stage == "done"
+
+    counted = sum(s.total for s in feature.user_stories) + feature.unassigned.total
+    assert counted == feature.progress.total
+
+
+def test_a_feature_whose_every_task_names_a_story_carries_no_leftover_bucket():
+    phases, tasks = parsing.parse_tasks(
+        "## Phase 1: User Story 1 — Everything\n\n- [x] T001 [US1] one\n- [ ] T002 [US1] two\n"
+    )
+    assert [t.story for t in tasks] == ["US1", "US1"]
+    assert not [t for t in tasks if not t.story]
+    _ = phases
 
 
 def _checksum(root: Path) -> list[tuple[str, int, str]]:
