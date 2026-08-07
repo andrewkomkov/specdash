@@ -215,6 +215,33 @@ class Project(BaseModel):
     error: str | None = None
 
 
+class SearchHit(BaseModel):
+    """One thing the index found, with enough context to open it."""
+
+    kind: Literal["feature", "story", "task", "requirement", "checklist", "document"]
+    project_id: str
+    feature_id: str
+    ref: str  # task id, story id, requirement id, or a document path
+    file: str | None = None
+    title: str
+    subtitle: str
+    # The matching text in context. Markers are \x02 and \x03 so the browser can
+    # highlight without the payload ever being HTML.
+    snippet: str = ""
+    score: float = 0.0
+
+
+class SearchResult(BaseModel):
+    query: str
+    hits: list[SearchHit] = Field(default_factory=list)
+    total: int = 0
+    took_ms: float = 0
+    # "tokens", "substring" or "none" — the board says how it found something,
+    # for the same reason a card says why it sits where it does.
+    matched_by: Literal["tokens", "substring", "none"] = "none"
+    suggestions: list[str] = Field(default_factory=list)
+
+
 class Snapshot(BaseModel):
     generated_at: float
     root: str

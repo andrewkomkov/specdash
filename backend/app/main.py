@@ -13,9 +13,9 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import history, scanner
+from . import history, scanner, search
 from .config import settings
-from .models import STAGE_LABELS, STAGES, ProjectHistory, Snapshot
+from .models import STAGE_LABELS, STAGES, ProjectHistory, SearchResult, Snapshot
 
 logging.basicConfig(
     level=os.getenv("SPECDASH_LOG_LEVEL", "INFO"),
@@ -36,6 +36,7 @@ class Hub:
     def __init__(self) -> None:
         self.clients: set[WebSocket] = set()
         self.snapshot: Snapshot | None = None
+        self.index: search.Index | None = None
         self.lock = asyncio.Lock()
 
     async def rescan(self, reason: str) -> Snapshot:
@@ -47,6 +48,10 @@ class Hub:
                 with_git=settings.with_git,
                 max_depth=settings.max_depth,
             )
+            # Built in the same worker thread as the scan, then swapped in with a
+            # single assignment: a search arriving mid-rescan is answered by the
+            # previous index, complete, rather than by a half-built one.
+            self.index = await asyncio.to_thread(search.build, snapshot)
             self.snapshot = snapshot
         log.info(
             "scan (%s): %d project(s), %d feature(s) in %dms",
@@ -233,6 +238,24 @@ async def feature_commits(project_id: str, feature_id: str) -> dict:
         scanner.feature_commits, Path(project.path), f"specs/{feature_id}"
     )
     return {"commits": [c.model_dump() for c in commits]}
+
+
+@app.get("/api/search")
+async def search_endpoint(q: str, limit: int = 30, kind: str | None = None) -> dict:
+    """Ranked hits across the documents, the tasks, the stories and the rest.
+
+    The index is in memory and is rebuilt with every scan, so this is always
+    answering about the files as they are now.
+    """
+    if hub.index is None:
+        await hub.rescan("cold")
+    assert hub.index is not None
+    if kind is not None and kind not in search.KINDS:
+        raise HTTPException(400, f"unknown kind {kind!r}")
+    result: SearchResult = await asyncio.to_thread(
+        hub.index.search, q, limit=max(1, min(limit, 100)), kind=kind
+    )
+    return result.model_dump()
 
 
 @app.get("/api/projects/{project_id}/history")

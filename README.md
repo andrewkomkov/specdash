@@ -73,6 +73,19 @@ longest. A project that is not under git says so rather than drawing an empty ch
 
 ![Completion over time, per project](.github/assets/trend.png)
 
+### Search what is written, not just what is titled
+
+Press **⌘K** and search across every specification, plan, research note and contract — the
+text, ranked, with the matching line shown. The board's own filter narrows cards from the
+snapshot in your browser; the snapshot has never carried document bodies, so this is the only
+way to find a sentence someone wrote in a `plan.md` eighteen months ago.
+
+Partial words match by prefix, substrings fall back to a trigram index, and a misspelling is
+answered with a correction rather than an empty page. It is SQLite's FTS5, which was already
+in the image's standard library: **no dependency was added and nothing is fetched.** The index
+is rebuilt with every scan and lives only in memory — an index file would have been the first
+thing SpecDash ever wrote.
+
 ### It updates itself
 
 Run `/speckit-tasks` in one window with the board open in another: progress moves, cards
