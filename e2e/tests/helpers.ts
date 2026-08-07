@@ -22,7 +22,7 @@ export async function gotoBoard(page: Page, grain: 'features' | 'stories' = 'fea
   await expect(page.getByTestId('column-specify')).toBeVisible()
 }
 
-export function setGrain(page: Page, label: 'Фичи' | 'Истории' | 'Динамика') {
+export function setGrain(page: Page, label: 'Features' | 'Stories' | 'Trend') {
   return page.getByRole('banner').getByText(label, { exact: true }).click()
 }
 

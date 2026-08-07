@@ -38,7 +38,8 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { Commit, Feature } from '../types'
 import { PRIORITY_COLOR, STAGE_COLOR, STAGE_LABEL } from '../types'
-import { formatBytes, progressColor, projectColor, relativeTime } from '../utils'
+import { formatBytes, progressColor, projectColor } from '../utils'
+import { useT } from '../i18n'
 import { MarkdownView } from './MarkdownView'
 import classes from './FeatureDrawer.module.css'
 
@@ -50,6 +51,7 @@ interface Props {
 }
 
 export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
+  const { t, ago } = useT()
   const [tab, setTab] = useState<string | null>('overview')
   const [openFile, setOpenFile] = useState<string | null>(null)
 
@@ -96,8 +98,8 @@ export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
               {feature.title}
             </Title>
             <Text size="xs" c="dimmed" mt={4}>
-              {feature.stage_reason} · изменено {relativeTime(feature.modified)}
-              {feature.created ? ` · создано ${feature.created}` : ''}
+              {feature.stage_reason} · {t('drawer.modified', { when: ago(feature.modified) })}
+              {feature.created ? ` · ${t('drawer.created', { date: feature.created })}` : ''}
             </Text>
           </Box>
           {feature.progress.total > 0 && (
@@ -124,7 +126,7 @@ export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
       <Tabs value={tab} onChange={setTab} keepMounted={false} className={classes.tabs}>
         <Tabs.List px="lg">
           <Tabs.Tab value="overview" leftSection={<IconTargetArrow size={14} />}>
-            Обзор
+            {t('drawer.overview')}
           </Tabs.Tab>
           <Tabs.Tab
             value="tasks"
@@ -137,16 +139,16 @@ export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
               ) : null
             }
           >
-            Задачи
+            {t('drawer.tasks')}
           </Tabs.Tab>
           <Tabs.Tab value="checklists" leftSection={<IconChecklist size={14} />}>
-            Чеклисты
+            {t('drawer.checklists')}
           </Tabs.Tab>
           <Tabs.Tab value="docs" leftSection={<IconFileText size={14} />}>
-            Документы
+            {t('drawer.docs')}
           </Tabs.Tab>
           <Tabs.Tab value="git" leftSection={<IconGitCommit size={14} />}>
-            История
+            {t('drawer.history')}
           </Tabs.Tab>
         </Tabs.List>
 
@@ -173,6 +175,7 @@ export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
 }
 
 function Overview({ feature, focusStory }: { feature: Feature; focusStory: string | null }) {
+  const { t } = useT()
   return (
     <ScrollArea.Autosize mah="calc(100vh - 210px)" type="hover">
       <Stack gap="lg" pr="sm">
@@ -181,7 +184,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
             color="red"
             variant="light"
             icon={<IconAlertTriangle size={16} />}
-            title={`${feature.open_questions.length} открытых вопроса в спеке`}
+            title={t('card.openQuestions', { count: feature.open_questions.length })}
           >
             <Stack gap={4}>
               {feature.open_questions.map((q, i) => (
@@ -195,7 +198,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
 
         {feature.summary && (
           <Box>
-            <SectionTitle>Суть</SectionTitle>
+            <SectionTitle>{t('drawer.summary')}</SectionTitle>
             <Text size="sm" lh={1.6}>
               {feature.summary}
             </Text>
@@ -203,25 +206,28 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
         )}
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-          <Stat label="Статус" value={feature.status ?? '—'} />
+          <Stat label={t('drawer.status')} value={feature.status ?? '—'} />
           <Stat
-            label="Задачи"
+            label={t('drawer.taskCount')}
             value={feature.progress.total ? `${feature.progress.done}/${feature.progress.total}` : '—'}
           />
           <Stat
-            label="Чеклисты"
+            label={t('drawer.checklistCount')}
             value={
               feature.checklist_progress.total
                 ? `${feature.checklist_progress.done}/${feature.checklist_progress.total}`
                 : '—'
             }
           />
-          <Stat label="Требования" value={`${feature.requirements.length} FR`} />
+          <Stat
+            label={t('drawer.requirementCount')}
+            value={t('drawer.requirementsShort', { count: feature.requirements.length })}
+          />
         </SimpleGrid>
 
         {feature.user_stories.length > 0 && (
           <Box>
-            <SectionTitle>Пользовательские истории</SectionTitle>
+            <SectionTitle>{t('drawer.stories')}</SectionTitle>
             <Accordion
               variant="separated"
               radius="md"
@@ -250,7 +256,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
                         {story.total > 0 && (
                           <Tooltip
                             withArrow
-                            label={`задачи tasks.md с тегом ${story.id}: ${story.done} из ${story.total} закрыто`}
+                            label={t('drawer.storyTasksTooltip', { story: story.id, done: story.done, total: story.total })}
                           >
                             <Group gap={6} wrap="nowrap" w={190}>
                               <Progress
@@ -261,7 +267,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
                                 style={{ flex: 1 }}
                               />
                               <Text size="xs" c="dimmed" w={92} ta="right" style={{ whiteSpace: 'nowrap' }}>
-                                {story.done}/{story.total} задач
+                                {t('drawer.storyTasks', { done: story.done, total: story.total })}
                               </Text>
                             </Group>
                           </Tooltip>
@@ -275,14 +281,14 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
                             {story.narrative}
                           </Text>
                         )}
-                        {story.why && <Labelled label="Почему такой приоритет">{story.why}</Labelled>}
+                        {story.why && <Labelled label={t('drawer.why')}>{story.why}</Labelled>}
                         {story.independent_test && (
-                          <Labelled label="Независимая проверка">{story.independent_test}</Labelled>
+                          <Labelled label={t('drawer.independentTest')}>{story.independent_test}</Labelled>
                         )}
                         {story.acceptance.length > 0 && (
                           <Box>
                             <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={6}>
-                              Сценарии приёмки
+                              {t('drawer.acceptance')}
                             </Text>
                             <Timeline bulletSize={16} lineWidth={2}>
                               {story.acceptance.map((sc) => (
@@ -306,7 +312,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
 
         {Object.keys(feature.tech).length > 0 && (
           <Box>
-            <SectionTitle>Технический контекст (plan.md)</SectionTitle>
+            <SectionTitle>{t('drawer.tech')}</SectionTitle>
             <Table fz="xs" verticalSpacing={6} withTableBorder>
               <Table.Tbody>
                 {Object.entries(feature.tech).map(([key, value]) => (
@@ -323,15 +329,15 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
         )}
 
         {feature.success_criteria.length > 0 && (
-          <RequirementList title="Критерии успеха" items={feature.success_criteria} color="teal" />
+          <RequirementList title={t('drawer.successCriteria')} items={feature.success_criteria} color="teal" />
         )}
         {feature.requirements.length > 0 && (
-          <RequirementList title="Требования" items={feature.requirements} color="blue" collapse />
+          <RequirementList title={t('drawer.requirements')} items={feature.requirements} color="blue" collapse />
         )}
 
         {feature.edge_cases.length > 0 && (
           <Box>
-            <SectionTitle>Краевые случаи</SectionTitle>
+            <SectionTitle>{t('drawer.edgeCases')}</SectionTitle>
             <Stack gap={6}>
               {feature.edge_cases.map((edge, i) => (
                 <Text size="sm" key={i} lh={1.55}>
@@ -344,7 +350,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
 
         {feature.clarifications.length > 0 && (
           <Box>
-            <SectionTitle>Уточнения</SectionTitle>
+            <SectionTitle>{t('drawer.clarifications')}</SectionTitle>
             <Stack gap={6}>
               {feature.clarifications.map((c, i) => (
                 <Text size="sm" key={i} lh={1.55}>
@@ -357,7 +363,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
 
         {feature.input && (
           <Box>
-            <SectionTitle>Исходный запрос</SectionTitle>
+            <SectionTitle>{t('drawer.input')}</SectionTitle>
             <Text size="xs" c="dimmed" lh={1.6} className={classes.quote}>
               {feature.input}
             </Text>
@@ -369,6 +375,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
 }
 
 function TasksPanel({ feature }: { feature: Feature }) {
+  const { t } = useT()
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [group, setGroup] = useState<'phase' | 'story'>('phase')
 
@@ -376,7 +383,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
     const tasks = onlyOpen ? feature.tasks.filter((t) => !t.done) : feature.tasks
     const map = new Map<string, typeof tasks>()
     for (const task of tasks) {
-      const key = group === 'phase' ? task.phase : (task.story ?? 'Без истории')
+      const key = group === 'phase' ? task.phase : (task.story ?? t('card.noStory'))
       const list = map.get(key) ?? []
       list.push(task)
       map.set(key, list)
@@ -386,8 +393,8 @@ function TasksPanel({ feature }: { feature: Feature }) {
 
   if (!feature.tasks.length) {
     return (
-      <Alert variant="light" color="gray" title="Задач ещё нет">
-        В этой фиче нет tasks.md — spec-kit ещё не нарезал работу.
+      <Alert variant="light" color="gray" title={t('drawer.noTasksTitle')}>
+        {t('drawer.noTasksBody')}
       </Alert>
     )
   }
@@ -400,13 +407,13 @@ function TasksPanel({ feature }: { feature: Feature }) {
           value={group}
           onChange={(v) => setGroup(v as 'phase' | 'story')}
           data={[
-            { value: 'phase', label: 'По фазам' },
-            { value: 'story', label: 'По историям' },
+            { value: 'phase', label: t('drawer.byPhase') },
+            { value: 'story', label: t('drawer.byStory') },
           ]}
         />
         <Switch
           size="xs"
-          label="Только незакрытые"
+          label={t('drawer.onlyOpen')}
           checked={onlyOpen}
           onChange={(e) => setOnlyOpen(e.currentTarget.checked)}
         />
@@ -460,7 +467,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
                         size="xs"
                         mt={2}
                         color="teal"
-                        aria-label={task.done ? 'сделано' : 'не сделано'}
+                        aria-label={task.done ? t('drawer.done') : t('drawer.notDone')}
                       />
                       <Box style={{ minWidth: 0, flex: 1 }}>
                         <Group gap={5} wrap="nowrap" align="baseline">
@@ -468,7 +475,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
                             {task.id}
                           </Text>
                           {task.parallel && (
-                            <Tooltip label="Можно делать параллельно" withArrow>
+                            <Tooltip label={t('card.parallel')} withArrow>
                               <Badge size="xs" variant="dot" color="cyan" px={4}>
                                 P
                               </Badge>
@@ -511,10 +518,11 @@ function TasksPanel({ feature }: { feature: Feature }) {
 }
 
 function ChecklistsPanel({ feature }: { feature: Feature }) {
+  const { t } = useT()
   if (!feature.checklists.length) {
     return (
-      <Alert variant="light" color="gray" title="Чеклистов нет">
-        В папке фичи нет каталога checklists/.
+      <Alert variant="light" color="gray" title={t('drawer.noChecklistsTitle')}>
+        {t('drawer.noChecklistsBody')}
       </Alert>
     )
   }
@@ -561,6 +569,7 @@ function DocsPanel({
   openFile: string | null
   setOpenFile: (file: string) => void
 }) {
+  const { t, ago } = useT()
   return (
     <Group align="flex-start" gap="md" wrap="nowrap">
       <Box w={230} style={{ flex: 'none' }}>
@@ -571,7 +580,7 @@ function DocsPanel({
                 key={artifact.file}
                 active={openFile === artifact.file}
                 label={artifact.label}
-                description={`${formatBytes(artifact.bytes)} · ${relativeTime(artifact.modified)}`}
+                description={`${formatBytes(artifact.bytes)} · ${ago(artifact.modified)}`}
                 onClick={() => setOpenFile(artifact.file)}
                 variant="light"
                 className={classes.navlink}
@@ -585,7 +594,7 @@ function DocsPanel({
           <MarkdownView projectId={feature.project_id} featureId={feature.id} file={openFile} />
         ) : (
           <Text c="dimmed" size="sm">
-            Выберите документ слева.
+            {t('drawer.pickDocument')}
           </Text>
         )}
       </Box>
@@ -594,6 +603,7 @@ function DocsPanel({
 }
 
 function GitPanel({ feature }: { feature: Feature }) {
+  const { t } = useT()
   const [commits, setCommits] = useState<Commit[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -617,8 +627,8 @@ function GitPanel({ feature }: { feature: Feature }) {
   if (commits === null) return <Loader size="sm" />
   if (!commits.length) {
     return (
-      <Alert variant="light" color="gray" title="Коммитов не найдено">
-        Либо проект не под git, либо в истории нет коммитов, трогавших specs/{feature.id}.
+      <Alert variant="light" color="gray" title={t('drawer.noCommitsTitle')}>
+        {t('drawer.noCommitsBody', { feature: feature.id })}
       </Alert>
     )
   }
@@ -687,6 +697,7 @@ function RequirementList({
   color: string
   collapse?: boolean
 }) {
+  const { t } = useT()
   const [expanded, setExpanded] = useState(!collapse)
   const shown = expanded ? items : items.slice(0, 6)
   return (
@@ -708,7 +719,7 @@ function RequirementList({
       </Stack>
       {items.length > shown.length && (
         <Anchor component="button" size="xs" mt={6} onClick={() => setExpanded(true)}>
-          показать ещё {items.length - shown.length}
+          {t('drawer.showMore', { count: items.length - shown.length })}
         </Anchor>
       )}
     </Box>

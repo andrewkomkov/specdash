@@ -1,0 +1,31 @@
+name: Feature request
+description: Something the board should show and does not
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing: SpecDash never writes into a scanned project, and it never invents
+        data that is not in the files. Requests that need either will be declined, however
+        useful they are — see [the constitution](../../.specify/memory/constitution.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you were trying to find out
+      description: The question you were asking of your projects when the board fell short.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Which file would the answer come from
+      description: SpecDash only knows what spec-kit wrote down. Which document holds it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today

@@ -2,7 +2,8 @@ import { Badge, Box, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '
 import { IconInfoCircle } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { Feature, Stage } from '../types'
-import { STAGE_COLOR, STAGE_HINT, STAGE_LABEL, STAGES } from '../types'
+import { STAGE_COLOR, STAGE_LABEL, STAGES } from '../types'
+import { useT } from '../i18n'
 import { FeatureCard } from './FeatureCard'
 import { StoryCard } from './StoryCard'
 import type { StoryRow } from './StoryCard'
@@ -97,6 +98,7 @@ function Column({
   total: number
   children: ReactNode
 }) {
+  const { t } = useT()
   const color = STAGE_COLOR[stage]
 
   return (
@@ -112,7 +114,7 @@ function Column({
               {count}
             </Badge>
           </Group>
-          <Tooltip label={STAGE_HINT[stage]} withArrow multiline w={220}>
+          <Tooltip label={t(`stage.${stage}.hint` as 'stage.done.hint')} withArrow multiline w={220}>
             <ThemeIcon size={16} variant="transparent" color="gray">
               <IconInfoCircle size={13} />
             </ThemeIcon>
@@ -120,7 +122,7 @@ function Column({
         </Group>
         {total > 0 && (
           <Text size="10px" c="dimmed" mt={2}>
-            {done}/{total} задач в колонке
+            {t('board.columnTotals', { done, total })}
           </Text>
         )}
       </Box>
@@ -131,7 +133,7 @@ function Column({
           {count === 0 && (
             <Box className={classes.empty}>
               <Text size="xs" c="dimmed">
-                пусто
+                {t('board.empty')}
               </Text>
             </Box>
           )}

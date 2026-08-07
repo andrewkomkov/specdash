@@ -21,7 +21,8 @@ import {
 } from '@tabler/icons-react'
 import type { Feature } from '../types'
 import { PRIORITY_COLOR } from '../types'
-import { progressColor, projectColor, relativeTime } from '../utils'
+import { progressColor, projectColor } from '../utils'
+import { useT } from '../i18n'
 import classes from './FeatureCard.module.css'
 
 const ARTIFACT_ICONS: { key: string; label: string; Icon: typeof IconFileText }[] = [
@@ -42,6 +43,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
   const accent = projectColor(feature.project_id)
   const pct = feature.progress.pct
   const has = (key: string) => feature.artifacts.some((a) => a.key === key)
+  const { t, n, ago } = useT()
   const contracts = feature.artifacts.filter((a) => a.key.startsWith('contracts/')).length
   const stories = feature.user_stories.slice(0, 4)
 
@@ -52,6 +54,18 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
       padding="md"
       className={`${classes.card} ${flashing ? classes.flash : ''}`}
       onClick={() => onOpen(feature)}
+      // A card was openable by click and by nothing else, while the story card
+      // beside it had all four of these. The primary action of the whole board
+      // must not require a mouse.
+      role="button"
+      tabIndex={0}
+      aria-label={t('card.open', { title: feature.title })}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen(feature)
+        }
+      }}
       data-current={feature.is_current || undefined}
       data-testid="feature-card"
       data-feature={`${feature.project_id}/${feature.id}`}
@@ -68,7 +82,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
           )}
         </Group>
         {feature.is_current && (
-          <Tooltip label="Активная фича (.specify/feature.json)" withArrow>
+          <Tooltip label={t('card.current')} withArrow>
             <Badge
               size="xs"
               variant="gradient"
@@ -111,7 +125,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
           <Box>
             <Group justify="space-between" gap={4} mb={3}>
               <Text size="10px" c="dimmed" fw={600} tt="uppercase">
-                задачи
+                {t('card.tasks')}
               </Text>
               <Text size="10px" c="dimmed" fw={600}>
                 {feature.progress.done}/{feature.progress.total}
@@ -137,7 +151,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
                   withArrow
                   multiline
                   w={260}
-                  label={`${story.title}${story.total ? ` — ${story.done}/${story.total} задач` : ''}`}
+                  label={`${story.title}${story.total ? ` — ${n(story.total, 'task')}, ${story.done} ${t('trend.closed')}` : ''}`}
                 >
                   <Badge
                     size="xs"
@@ -165,7 +179,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
       <Group justify="space-between" mt="sm" gap={6} wrap="nowrap">
         <Group gap={5} wrap="nowrap">
           {ARTIFACT_ICONS.map(({ key, label, Icon }) => (
-            <Tooltip key={key} label={has(key) ? label : `нет ${label}`} withArrow>
+            <Tooltip key={key} label={has(key) ? label : t('card.missing', { label })} withArrow>
               <Icon
                 size={14}
                 className={has(key) ? classes.artifactOn : classes.artifactOff}
@@ -174,7 +188,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
             </Tooltip>
           ))}
           {contracts > 0 && (
-            <Tooltip label={`${contracts} контракт(а)`} withArrow>
+            <Tooltip label={n(contracts, 'contract')} withArrow>
               <Badge size="xs" variant="default" radius="sm" px={5} className={classes.pill}>
                 {contracts}c
               </Badge>
@@ -182,7 +196,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
           )}
           {feature.checklist_progress.total > 0 && (
             <Tooltip
-              label={`чеклисты: ${feature.checklist_progress.done}/${feature.checklist_progress.total}`}
+              label={`${t('card.checklists')}: ${feature.checklist_progress.done}/${feature.checklist_progress.total}`}
               withArrow
             >
               <Badge
@@ -222,7 +236,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
           <Group gap={3} wrap="nowrap" className={classes.footerMeta}>
             <IconGitBranch size={11} stroke={1.6} />
             <Text size="10px" c="dimmed">
-              {relativeTime(feature.modified)}
+              {ago(feature.modified)}
             </Text>
           </Group>
         </Tooltip>

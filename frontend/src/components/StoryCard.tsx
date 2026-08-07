@@ -1,6 +1,7 @@
 import { Badge, Box, Card, Group, Progress, Text, Tooltip } from '@mantine/core'
 import type { Feature, UserStory } from '../types'
 import { PRIORITY_COLOR } from '../types'
+import { useT } from '../i18n'
 import { progressColor, projectColor } from '../utils'
 import classes from './FeatureCard.module.css'
 
@@ -19,6 +20,7 @@ interface Props {
 
 /** One user story as a card, placed by its own tick counts. */
 export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
+  const { t } = useT()
   const { story, feature } = row
   const accent = projectColor(feature.project_id)
   const pct = story.total ? Math.round((100 * story.done) / story.total) : 0
@@ -36,6 +38,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
       onClick={() => onOpen(row)}
       role="button"
       tabIndex={0}
+      aria-label={t('card.open', { title: story.title })}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
@@ -71,7 +74,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
       </Group>
 
       <Text fw={600} lh={1.3} className={classes.title} lineClamp={3}>
-        {story.title}
+        {story.id === '—' ? t('card.noStory') : story.title}
       </Text>
 
       {/* Which feature this story belongs to — a story title alone is not enough
@@ -87,7 +90,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
         <Box mt={8}>
           <Group justify="space-between" gap={6} mb={3} wrap="nowrap">
             <Text size="10px" c="dimmed" tt="uppercase" fw={700}>
-              задачи
+              {t('card.tasks')}
             </Text>
             <Text size="10px" fw={700} className={classes.footerMeta}>
               {story.done}/{story.total}
@@ -103,7 +106,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
 
       {story.acceptance.length > 0 && (
         <Text size="10px" c="dimmed" mt={6}>
-          {story.acceptance.length} сценари{story.acceptance.length === 1 ? 'й' : 'ев'} приёмки
+          {t('card.acceptance', { count: story.acceptance.length })}
         </Text>
       )}
     </Card>

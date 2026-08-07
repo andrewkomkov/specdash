@@ -20,15 +20,6 @@ export const STAGE_COLOR: Record<Stage, string> = {
   done: 'green',
 }
 
-export const STAGE_HINT: Record<Stage, string> = {
-  specify: 'Спека написана, ждёт уточнений',
-  clarify: 'Уточнена, план ещё не построен',
-  plan: 'План есть, задачи не нарезаны',
-  tasks: 'Задачи нарезаны, работа не началась',
-  implement: 'Задачи закрываются',
-  done: 'Все задачи закрыты',
-}
-
 export const PRIORITY_COLOR: Record<string, string> = {
   P1: 'red',
   P2: 'orange',

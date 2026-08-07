@@ -10,10 +10,10 @@ import sys
 import types
 
 import pytest
+from conftest import WORKSPACE
 from fastapi.testclient import TestClient
 
 from app import main, scanner
-from conftest import WORKSPACE
 
 
 @pytest.fixture
@@ -211,9 +211,8 @@ def test_the_loop_survives_a_watcher_that_raises(monkeypatch, snapshotted, caplo
 
     monkeypatch.setattr(main.asyncio, "sleep", fake_sleep)
 
-    with caplog.at_level("WARNING"):
-        with pytest.raises(asyncio.CancelledError):
-            asyncio.run(main._watch_loop())
+    with caplog.at_level("WARNING"), pytest.raises(asyncio.CancelledError):
+        asyncio.run(main._watch_loop())
 
     assert "watcher restarting after error" in caplog.text
     assert calls["n"] == 1

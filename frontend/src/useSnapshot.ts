@@ -110,11 +110,14 @@ export function useSnapshot(): LiveState {
       .catch(() => undefined)
 
     connect()
+    // Captured now: by the time cleanup runs, `timers.current` may be a
+    // different map, and the timers this effect started would outlive it.
+    const started = timers.current
     return () => {
       closed = true
       if (retry) window.clearTimeout(retry)
       socket.current?.close()
-      timers.current.forEach((t) => window.clearTimeout(t))
+      started.forEach((t) => window.clearTimeout(t))
     }
   }, [apply])
 

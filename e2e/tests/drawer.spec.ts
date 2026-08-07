@@ -26,7 +26,7 @@ test.describe('the drawer reads a feature end to end', () => {
       .click()
 
     const drawer = page.getByRole('dialog')
-    await drawer.getByRole('tab', { name: 'Задачи' }).click()
+    await drawer.getByRole('tab', { name: 'Tasks' }).click()
     await expect(drawer.getByText('T003', { exact: true })).toBeVisible()
 
     await drawer.getByRole('switch').check()
@@ -42,7 +42,7 @@ test.describe('the drawer reads a feature end to end', () => {
       .click()
 
     const drawer = page.getByRole('dialog')
-    await drawer.getByRole('tab', { name: 'Задачи' }).click()
+    await drawer.getByRole('tab', { name: 'Tasks' }).click()
 
     const boxes = drawer.getByRole('checkbox')
     const count = await boxes.count()
@@ -60,11 +60,11 @@ test.describe('the drawer reads a feature end to end', () => {
       .click()
 
     const drawer = page.getByRole('dialog')
-    await drawer.getByRole('tab', { name: 'Чеклисты' }).click()
+    await drawer.getByRole('tab', { name: 'Checklists' }).click()
     await expect(drawer).toContainText('Every requirement has an id')
     await expect(drawer).toContainText('1/2')
 
-    await drawer.getByRole('tab', { name: 'Документы' }).click()
+    await drawer.getByRole('tab', { name: 'Documents' }).click()
     // The panel opens on spec.md, which is the document people want first.
     await expect(drawer).toContainText('Feature Specification: Map the catalogue')
     await expect(drawer).toContainText('Checklist · requirements')
@@ -81,8 +81,8 @@ test.describe('the drawer reads a feature end to end', () => {
       .click()
 
     const drawer = page.getByRole('dialog')
-    await drawer.getByRole('tab', { name: 'История' }).click()
-    await expect(drawer).toContainText('Коммитов не найдено')
+    await drawer.getByRole('tab', { name: 'History' }).click()
+    await expect(drawer).toContainText('No commits found')
   })
 
   test('an open question in the spec is surfaced, not buried', async ({ page }) => {
@@ -92,7 +92,7 @@ test.describe('the drawer reads a feature end to end', () => {
       .filter({ hasText: 'No git here' })
       .click()
 
-    await expect(page.getByRole('dialog')).toContainText('открыт')
+    await expect(page.getByRole('dialog')).toContainText('open question')
     await expect(page.getByRole('dialog')).toContainText('should it offer to initialise one?')
   })
 
@@ -122,7 +122,7 @@ test.describe('the drawer reads a feature end to end', () => {
       .click()
 
     const drawer = page.getByRole('dialog')
-    await expect(drawer.getByRole('tab', { name: 'Задачи' })).toHaveAttribute(
+    await expect(drawer.getByRole('tab', { name: 'Tasks' })).toHaveAttribute(
       'aria-selected',
       'true',
     )

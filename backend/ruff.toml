@@ -1,0 +1,24 @@
+line-length = 100
+target-version = "py313"
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = [
+    # The private helpers this codebase tests directly are private on purpose:
+    # they are the seams where behaviour is decided, and testing them through a
+    # public wrapper would test the wrapper.
+    "SLF001",
+    # spec-kit templates write en and em dashes in headings, so the parser has to
+    # match them literally. Calling them "ambiguous" is right in general and
+    # wrong here — replacing them would stop the parser working.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[lint.per-file-ignores]
+# Tests reach into private helpers deliberately, and assert on long literals.
+"tests/*" = ["E501", "C408"]
+
+[format]
+quote-style = "double"

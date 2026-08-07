@@ -13,7 +13,8 @@ import {
 import { IconClockPause, IconGitBranch, IconInfoCircle } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import type { HistoryPoint, Project, ProjectHistory } from '../types'
-import { projectColor, relativeTime } from '../utils'
+import { projectColor } from '../utils'
+import { useT } from '../i18n'
 import classes from './Trend.module.css'
 
 interface Props {
@@ -22,11 +23,12 @@ interface Props {
 
 /** Movement rather than position: task completion per commit, per project. */
 export function Trend({ projects }: Props) {
+  const { t } = useT()
   if (!projects.length) {
     return (
       <Box p="lg">
         <Text c="dimmed" size="sm">
-          Ни одного проекта не выбрано.
+          {t('app.nothingSelected')}
         </Text>
       </Box>
     )
@@ -41,6 +43,7 @@ export function Trend({ projects }: Props) {
 }
 
 function ProjectTrend({ project }: { project: Project }) {
+  const { t } = useT()
   const [history, setHistory] = useState<ProjectHistory | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,14 +85,14 @@ function ProjectTrend({ project }: { project: Project }) {
           <Group gap={8} wrap="nowrap">
             {/* Not the same number as the board when something is uncommitted —
                 the series is what git holds, and says so rather than guessing. */}
-            <Tooltip label="по последнему коммиту, а не по рабочей копии" withArrow>
+            <Tooltip label={t('trend.asOfLastCommit')} withArrow>
               <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                 {last.done}/{last.total} · {last.pct}%
               </Text>
             </Tooltip>
             {delta > 0 && (
               <Badge size="xs" variant="light" color="teal" radius="sm">
-                +{delta} за {history?.commits_scanned} коммитов
+                {t('trend.delta', { delta, commits: history?.commits_scanned ?? 0 })}
               </Badge>
             )}
           </Group>
@@ -104,7 +107,7 @@ function ProjectTrend({ project }: { project: Project }) {
         <Group gap="xs" py="lg" justify="center">
           <Loader size="xs" />
           <Text size="xs" c="dimmed">
-            читаю историю git…
+            {t('trend.reading')}
           </Text>
         </Group>
       ) : !history.available ? (
@@ -113,10 +116,10 @@ function ProjectTrend({ project }: { project: Project }) {
           variant="light"
           color="gray"
           icon={<IconInfoCircle size={16} />}
-          title="История недоступна"
+          title={t('trend.unavailable')}
           py={8}
         >
-          <Text size="xs">{history.reason ?? 'нет данных'}</Text>
+          <Text size="xs">{history.reason ?? t('trend.noData')}</Text>
         </Alert>
       ) : (
         <>
@@ -133,6 +136,7 @@ const H = 150
 const PAD = { l: 34, r: 12, t: 12, b: 22 }
 
 function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
+  const { t } = useT()
   const times = points.map((p) => Date.parse(p.date))
   const minX = Math.min(...times)
   const maxX = Math.max(...times)
@@ -162,9 +166,10 @@ function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
         viewBox={`0 0 ${W} ${H}`}
         className={classes.chart}
         role="img"
-        aria-label={`Закрытые задачи по коммитам: ${points.at(-1)?.done ?? 0} из ${
-          points.at(-1)?.total ?? 0
-        }`}
+        aria-label={t('trend.chartLabel', {
+          done: points.at(-1)?.done ?? 0,
+          total: points.at(-1)?.total ?? 0,
+        })}
       >
         <defs>
           <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
@@ -219,9 +224,12 @@ function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
             fill="var(--mantine-color-teal-6)"
           >
             <title>
-              {`${new Date(times[i]).toLocaleString()}\n${p.done}/${p.total} задач (${p.pct}%), ${
-                p.features
-              } tasks.md\n${p.sha.slice(0, 8)} ${p.subject}`}
+              {`${new Date(times[i]).toLocaleString()}\n${t('trend.pointTooltip', {
+                done: p.done,
+                total: p.total,
+                pct: p.pct,
+                files: p.features,
+              })}\n${p.sha.slice(0, 8)} ${p.subject}`}
             </title>
           </circle>
         ))}
@@ -235,10 +243,10 @@ function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
       </svg>
 
       <Group gap="md" mt={2}>
-        <Legend color="var(--mantine-color-teal-6)" label="закрыто" />
-        <Legend color="var(--mantine-color-dimmed)" label="всего задач" dashed />
+        <Legend color="var(--mantine-color-teal-6)" label={t('trend.closed')} />
+        <Legend color="var(--mantine-color-dimmed)" label={t('trend.totalTasks')} dashed />
         <Text size="10px" c="dimmed">
-          точка = коммит, тронувший specs/
+          {t('trend.pointIsCommit')}
         </Text>
       </Group>
     </Box>
@@ -265,13 +273,14 @@ function Legend({ color, label, dashed }: { color: string; label: string; dashed
 
 /** Which feature folders the history has stopped touching. */
 function StaleList({ history }: { history: ProjectHistory }) {
+  const { t, ago } = useT()
   if (!history.stale.length) return null
   return (
     <Box mt="sm">
       <Group gap={6} mb={4}>
         <IconClockPause size={13} opacity={0.7} />
         <Text size="10px" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.06em' }}>
-          Дольше всего без коммитов
+          {t('trend.stale')}
         </Text>
       </Group>
       <Stack gap={3}>
@@ -283,7 +292,7 @@ function StaleList({ history }: { history: ProjectHistory }) {
               </Text>
             </Tooltip>
             <Text size="10px" c={item.days >= 14 ? 'orange' : 'dimmed'} style={{ whiteSpace: 'nowrap' }}>
-              {relativeTime(Date.parse(item.date) / 1000)}
+              {ago(Date.parse(item.date) / 1000)}
             </Text>
           </Group>
         ))}

@@ -6,6 +6,7 @@ with at least one numbered feature folder.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -62,10 +63,8 @@ def _read(path: Path) -> str:
 def _artifact(path: Path, rel: str, key: str, label: str) -> Artifact:
     st = path.stat()
     text = ""
-    try:
+    with contextlib.suppress(OSError):
         text = _read(path)
-    except OSError:
-        pass
     return Artifact(
         key=key,
         file=rel,
@@ -158,7 +157,13 @@ def feature_commits(project_path: Path, rel_dir: str, limit: int = 10) -> list[C
         if len(parts) != 5:
             continue
         commits.append(
-            Commit(sha=parts[0], subject=parts[1], author=parts[2], date=parts[3], relative=parts[4])
+            Commit(
+                sha=parts[0],
+                subject=parts[1],
+                author=parts[2],
+                date=parts[3],
+                relative=parts[4],
+            )
         )
     return commits
 

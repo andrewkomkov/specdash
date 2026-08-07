@@ -30,6 +30,19 @@ jobs:
       - run: npm ci
         working-directory: frontend
 
+      - run: npm run lint
+        working-directory: frontend
+
+      # Interface copy belongs in the dictionary. A literal that escapes it is a
+      # string one language will never see translated.
+      - name: Assert no interface copy escapes the dictionary
+        working-directory: frontend
+        run: |
+          if grep -rlE '[А-Яа-яЁё]' src --exclude=i18n.ts; then
+            echo "FAIL: translatable text found outside src/i18n.ts" && exit 1
+          fi
+          echo "all interface copy lives in the dictionary"
+
       # `npm run build` runs `tsc -b` first, so this is the typecheck too.
       - run: npm run build
         working-directory: frontend
@@ -56,6 +69,10 @@ jobs:
 
       - run: python -m compileall -q app
         working-directory: backend
+
+      - name: Lint
+        working-directory: backend
+        run: python -m ruff check app tests
 
       # pytest.ini carries --cov-fail-under=100, so this step is the gate.
       - name: Unit tests and coverage gate

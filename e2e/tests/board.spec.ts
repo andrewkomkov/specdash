@@ -35,14 +35,14 @@ test.describe('the board places every feature by its files', () => {
 
   test('Clarify and Tasks are empty, and say so rather than looking broken', async ({ page }) => {
     await expect(column(page, 'clarify').getByTestId('feature-card')).toHaveCount(0)
-    await expect(column(page, 'clarify')).toContainText('пусто')
+    await expect(column(page, 'clarify')).toContainText('empty')
     await expect(column(page, 'tasks').getByTestId('feature-card')).toHaveCount(0)
   })
 
   test('the column subtitle counts the tasks of the cards in it', async ({ page }) => {
     // atlas/001 is 4/7 and orphan/001 is 1/2 — the column says 5/9.
-    await expect(column(page, 'implement')).toContainText('5/9 задач в колонке')
-    await expect(column(page, 'done')).toContainText('6/6 задач в колонке')
+    await expect(column(page, 'implement')).toContainText('5/9 tasks in this column')
+    await expect(column(page, 'done')).toContainText('6/6 tasks in this column')
   })
 
   test('the header counts every project, and the feature named by feature.json is marked', async ({
@@ -50,8 +50,8 @@ test.describe('the board places every feature by its files', () => {
   }) => {
     // 4 + 6 + 2 = 12 tasks across the fixture, 11 of them ticked... minus the
     // three unticked ones: atlas 4/7, beacon 6/6, orphan 1/2 => 11/15.
-    await expect(page.getByRole('banner')).toContainText('11/15 задач')
-    await expect(page.getByRole('banner')).toContainText('5 фич')
+    await expect(page.getByRole('banner')).toContainText('11/15 tasks')
+    await expect(page.getByRole('banner')).toContainText('5 features')
 
     const current = page.getByTestId('feature-card').filter({ hasText: 'current' })
     await expect(current).toHaveCount(2) // atlas/001 and beacon/001
