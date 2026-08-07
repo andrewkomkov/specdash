@@ -53,8 +53,12 @@ The second is what the constitution's first principle actually promises, and it 
 catch a future regression. It fails today if anyone makes a checkbox writable; the old
 assertion would not have.
 
-Both drawer tabs are covered — the Tasks tab and the Documents checklists are separate render
-sites (`FeatureDrawer.tsx:470` and `:554`) and only one of them was under test.
+Both drawer tabs are covered — the Tasks tab and the Checklists tab are separate `Checkbox`
+render sites in `FeatureDrawer.tsx`, and only the first was ever under test.
+
+The test is only worth the change if it would catch a regression, so that is checked rather
+than assumed: a checkbox mutated to be writable must fail it — including when it is left
+labelled read-only, which is the case the old assertion would have waved through.
 
 ### Step 4 — typescript stays put, in writing
 
@@ -91,7 +95,7 @@ somewhere to show up.
 
 **Mantine 9 across the whole UI, not just checkboxes.** The suite covers the drawer, the
 board, search, i18n and the live-update path, which is most of what Mantine renders here.
-45 tests is the evidence; it is not infinite.
+55 tests is the evidence; it is not infinite.
 
 **Deferring TypeScript means deferring it again next week.** Accepted. The alternative is
 carrying a lint exception for a compiler we gain nothing from today.

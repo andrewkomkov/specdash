@@ -45,7 +45,8 @@ which tracks support for TS **>= 7.1**. There is no version combination that lin
 by side, and neither is worth it to be three weeks early.
 
 **#21 is a real behavioural change, and the test was asserting a fiction.** Mantine 9
-installs, typechecks and builds; 44 of 45 e2e tests pass. The one failure is
+installs, typechecks and builds; on the pull request's own (older) base CI ran 45 tests and
+44 passed. The one failure is
 `every checkbox in the drawer is read-only`, which asserts
 `toHaveJSProperty('readOnly', true)` on the rendered `<input>`.
 
@@ -93,7 +94,7 @@ that triggered this work is the one that moved how it is enforced.
    state is unchanged.
 2. **Given** the drawer's Tasks tab, **When** a checkbox is inspected, **Then** it is marked
    read-only in a way assistive technology can report.
-3. **Given** the checklists in the Documents tab, **When** their boxes are clicked, **Then**
+3. **Given** the checklists in the Checklists tab, **When** their boxes are clicked, **Then**
    they are unchanged too.
 
 ### User Story 2 - The toolchain moves forward (Priority: P2)
@@ -111,7 +112,8 @@ full e2e suite is green.
 
 1. **Given** the bumped manifest, **When** `npm ci` runs, **Then** it resolves with no peer
    conflict and no `--legacy-peer-deps`.
-2. **Given** the bumped manifest, **When** the suite runs, **Then** all 45 e2e tests pass.
+2. **Given** the bumped manifest, **When** the suite runs in CI, **Then** the whole e2e suite
+   passes.
 
 ### User Story 3 - Coupled packages arrive coupled (Priority: P3)
 
@@ -139,8 +141,8 @@ these four red. Left alone, it recurs every time either package goes major.
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: `npm ci` resolves cleanly on the default flags.
-- **SC-002**: All 45 e2e tests pass, including a read-only test that fails if a checkbox ever
-  becomes writable.
+- **SC-002**: The e2e suite passes in CI, including a read-only test that fails if a checkbox
+  ever becomes writable — verified by mutation, not assumed.
 - **SC-003**: Three of the four red pull requests are closed by this change; the fourth is
   documented as blocked upstream rather than left to rot silently.
 
