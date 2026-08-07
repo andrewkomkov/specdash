@@ -134,8 +134,10 @@ these four red. Left alone, it recurs every time either package goes major.
   — and not by a DOM property that browsers ignore on checkboxes.
 - **FR-004**: Checkboxes MUST carry `aria-readonly`, so the guarantee is legible to assistive
   technology and to the test, which `readOnly` never made it.
-- **FR-005**: typescript MUST stay on 5.8 until typescript-eslint supports 7.x. The reason
-  MUST be recorded where the next person will look, so this is not re-investigated weekly.
+- **FR-005**: typescript MUST NOT be taken to 7.0 while typescript-eslint refuses to load
+  under it. The hold MUST be expressed narrowly — as a version range, not a major-wide
+  ignore — so the bump returns of its own accord once it can pass, and the reason MUST be
+  recorded where the next person will look rather than re-investigated weekly.
 - **FR-006**: `dependabot.yml` MUST group vite with its react plugin.
 
 ## Success Criteria *(mandatory)*
@@ -145,6 +147,20 @@ these four red. Left alone, it recurs every time either package goes major.
   ever becomes writable — verified by mutation, not assumed.
 - **SC-003**: Three of the four red pull requests are closed by this change; the fourth is
   documented as blocked upstream rather than left to rot silently.
+
+## What happened next
+
+Recorded here because it settled FR-005 within the hour, and because it is the evidence for
+writing the hold as a range instead of a major.
+
+Once the narrow ignore landed, dependabot did not go quiet — it re-proposed typescript at the
+highest version the range still allowed: **6.0.3**, which sits inside typescript-eslint's
+`>=4.8.4 <6.1.0` peer range. It went green on all four checks and was merged (#35).
+
+So the outcome is better than the one this spec planned for. The bump was never really
+"typescript 5.8 → 7.0 or nothing": 7.0 was unreachable, 6.0 was always available and always
+supported, and a major-wide ignore would have hidden it. The frontend is on TypeScript 6
+today, and 7.1 will arrive on its own when typescript-eslint#10940 closes.
 
 ## Out of Scope
 
