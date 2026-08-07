@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.6.1](https://github.com/andrewkomkov/specdash/compare/v0.6.0...v0.6.1) (2026-08-07)
+
+
+### Documentation
+
+* spec the frontend majors that can actually land ([4ec9986](https://github.com/andrewkomkov/specdash/commit/4ec998606029202c85a87a502beacc8b82bfb881))
+* tick 007 against the code ([13a75f8](https://github.com/andrewkomkov/specdash/commit/13a75f8112c826acf771a4cf867047f235186aee))
+* tick the queue cleanup for 007 ([c3b16aa](https://github.com/andrewkomkov/specdash/commit/c3b16aa5985f7cae783e2ad7e2f0bf12274de6ed))
+
+
+### Build
+
+* bump fastapi from 0.115.6 to 0.141.1 in /backend ([#24](https://github.com/andrewkomkov/specdash/issues/24)) ([75f1b47](https://github.com/andrewkomkov/specdash/commit/75f1b473eefe7290db9c4653cedfc1c223db568d))
+* bump mantine to 9 and assert read-only by behaviour ([c365823](https://github.com/andrewkomkov/specdash/commit/c365823d2fba15454d8babed343075d4c005a893))
+* bump node from 22-alpine to 25-alpine ([#20](https://github.com/andrewkomkov/specdash/issues/20)) ([bc3cc93](https://github.com/andrewkomkov/specdash/commit/bc3cc938b12597197f155690c7b22c84d329fdb5))
+* bump pydantic from 2.10.4 to 2.13.4 in /backend ([#16](https://github.com/andrewkomkov/specdash/issues/16)) ([dd344c2](https://github.com/andrewkomkov/specdash/commit/dd344c24989d65b19e9978c1599c06ed3171d1c4))
+* bump pytest-cov from 6.0.0 to 7.1.0 in /backend ([#18](https://github.com/andrewkomkov/specdash/issues/18)) ([1159683](https://github.com/andrewkomkov/specdash/commit/11596834c984a9b39642661f75b55c5e0f63cf45))
+* bump ruff from 0.9.2 to 0.16.1 in /backend ([#22](https://github.com/andrewkomkov/specdash/issues/22)) ([7fb04d2](https://github.com/andrewkomkov/specdash/commit/7fb04d292dbd0cca3f122d40e79d7214031608fb))
+* bump typescript from 5.8.3 to 6.0.3 in /frontend ([#35](https://github.com/andrewkomkov/specdash/issues/35)) ([81a299b](https://github.com/andrewkomkov/specdash/commit/81a299b24b7047423d393d749e1023e6300e88a8))
+* bump vite to 8 and its react plugin to 6 ([ce276cc](https://github.com/andrewkomkov/specdash/commit/ce276cc6f9f07963dea5736075e5a83365b4f3f3))
+* bump watchfiles from 1.0.3 to 1.2.0 in /backend ([#23](https://github.com/andrewkomkov/specdash/issues/23)) ([156560f](https://github.com/andrewkomkov/specdash/commit/156560f168c5b7404686ff57f2454a9be0473b50))
+* take the frontend majors that can actually land ([a4dd339](https://github.com/andrewkomkov/specdash/commit/a4dd3397c87d42c4f1b1b9b40b50058905d64643))
+
 ## [0.6.0](https://github.com/andrewkomkov/specdash/compare/v0.5.0...v0.6.0) (2026-08-07)
 
 
