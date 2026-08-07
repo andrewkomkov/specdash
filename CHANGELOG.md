@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/andrewkomkov/specdash/compare/v0.4.1...v0.5.0) (2026-08-07)
+
+
+### Features
+
+* make the board and the repository usable by someone else ([f2e9491](https://github.com/andrewkomkov/specdash/commit/f2e94917669dc76afe525d4691106395924fa3ae))
+
+
+### Documentation
+
+* link the landing page from the readme ([c3982db](https://github.com/andrewkomkov/specdash/commit/c3982db904a093ed8e65020eb8c1d696c5b314cf))
+
 ## [0.4.1](https://github.com/andrewkomkov/specdash/compare/v0.4.0...v0.4.1) (2026-08-07)
 
 
