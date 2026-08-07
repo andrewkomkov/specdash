@@ -24,9 +24,5 @@ class Settings:
         self.static_dir: Path = Path(os.getenv("SPECDASH_STATIC", "/app/static"))
         self.title: str = os.getenv("SPECDASH_TITLE", "SpecDash")
 
-    @property
-    def watch_paths(self) -> list[Path]:
-        return [p for p in [*self.roots, *self.projects] if p.exists()]
-
 
 settings = Settings()

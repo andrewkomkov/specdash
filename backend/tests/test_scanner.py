@@ -193,3 +193,13 @@ def test_discovery_does_not_descend_into_a_recognised_project():
     found = scanner.discover(WORKSPACE, max_depth=3)
 
     assert found == [DEMO]
+
+
+def test_commits_are_empty_outside_a_repository(tmp_path):
+    assert scanner.feature_commits(tmp_path, "specs/001-nothing") == []
+
+
+def test_a_malformed_commit_line_is_skipped_rather_than_raised_on(repo, monkeypatch):
+    monkeypatch.setattr(scanner.git, "run", lambda *a, **k: "only-one-field\nnot\x1fenough\n")
+
+    assert scanner.feature_commits(repo, "specs/001-walked-history") == []

@@ -31,6 +31,8 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
       padding="sm"
       className={`${classes.card} ${flashing ? classes.flash : ''}`}
       data-current={feature.is_current || undefined}
+      data-testid="story-card"
+      data-story={row.key}
       onClick={() => onOpen(row)}
       role="button"
       tabIndex={0}

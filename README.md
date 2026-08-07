@@ -116,10 +116,29 @@ python -m pytest                             # parsers, scanner, HTTP surface
 cd frontend && npm install && npm run dev    # :5173, proxies /api and /ws
 ```
 
-The tests are fixtures of the drift found in real spec-kit output — wrapped values,
+The backend suite is fixtures of the drift found in real spec-kit output — wrapped values,
 `SC-005a`, checkboxes in sections that are not tasks, a `tasks.md` with no ids at all —
-plus the two properties most expensive to get wrong: that a spec's prose never outranks its
-task list, and that a full scan leaves the scanned tree byte for byte identical.
+plus the properties most expensive to get wrong: that a spec's prose never outranks its
+task list, that no `doc?file=` traversal escapes a project, and that a full scan leaves the
+scanned tree byte for byte identical. Coverage of `backend/app/` is 100% and the gate is in
+`pytest.ini`, so it is enforced by running the tests rather than by remembering to look.
+That is a floor, not a claim of correctness — it says every line has been executed, not that
+every behaviour is right.
+
+The end-to-end suite drives the real application in a real browser:
+
+```bash
+cd frontend && npm run build          # the suite serves the built frontend
+cd ../e2e && npm ci && npx playwright install chromium
+npx playwright test
+```
+
+It starts the backend on a port of its own against a checked-in fixture workspace, and
+covers the board, both grains and the remembered preference, search, the drawer's tabs, the
+trend view including the project deliberately left outside git, and one live update — a
+checkbox ticked on disk, waited on until the card changes column. Nothing is mocked: every
+interesting failure this project has had was at the seam between the parser and the screen,
+and a suite replaying a recorded snapshot would be blind to all of them.
 
 Backend is FastAPI + pydantic + watchfiles; frontend is React 19 + Mantine 8 + Vite. The
 domain model lives in `backend/app/models.py` and is mirrored in `frontend/src/types.ts`.
