@@ -42,4 +42,4 @@ visible to a unit test with a mocked component.
 - [x] T011 `tsc -b --force` and `eslint .` both clean
 - [x] T012 e2e suite green — 54 pass; `live.spec.ts` "ticking a box on disk" fails locally on macOS **and fails identically on `main`**, so it is pre-existing and not attributable here. It passes in CI, which is the authority for it
 - [x] T012a Prove the new test guards something: mutating a checkbox to be writable fails it, including when it is left labelled read-only — the case the old assertion would have passed
-- [ ] T013 Close #27, #25 and #21 as superseded; comment the upstream blocker on #26
+- [x] T013 Close #27, #25 and #21 as superseded, and #26 with the upstream blocker recorded — the narrow ignore brings it back at 7.1 rather than leaving it to rot open
