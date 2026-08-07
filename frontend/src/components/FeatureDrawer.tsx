@@ -238,18 +238,23 @@ function Overview({ feature }: { feature: Feature }) {
                           {story.title}
                         </Text>
                         {story.total > 0 && (
-                          <Group gap={6} wrap="nowrap" w={140}>
-                            <Progress
-                              value={pct}
-                              color={progressColor(pct)}
-                              size="sm"
-                              radius="xl"
-                              style={{ flex: 1 }}
-                            />
-                            <Text size="xs" c="dimmed" w={42} ta="right">
-                              {story.done}/{story.total}
-                            </Text>
-                          </Group>
+                          <Tooltip
+                            withArrow
+                            label={`задачи tasks.md с тегом ${story.id}: ${story.done} из ${story.total} закрыто`}
+                          >
+                            <Group gap={6} wrap="nowrap" w={190}>
+                              <Progress
+                                value={pct}
+                                color={progressColor(pct)}
+                                size="sm"
+                                radius="xl"
+                                style={{ flex: 1 }}
+                              />
+                              <Text size="xs" c="dimmed" w={92} ta="right" style={{ whiteSpace: 'nowrap' }}>
+                                {story.done}/{story.total} задач
+                              </Text>
+                            </Group>
+                          </Tooltip>
                         )}
                       </Group>
                     </Accordion.Control>
