@@ -178,6 +178,28 @@ export interface ProjectHistory {
   commits_scanned: number
 }
 
+export interface SearchHit {
+  kind: 'feature' | 'story' | 'task' | 'requirement' | 'checklist' | 'document'
+  project_id: string
+  feature_id: string
+  ref: string
+  file: string | null
+  title: string
+  subtitle: string
+  /** matched text, marked with \x02 and \x03 rather than with HTML */
+  snippet: string
+  score: number
+}
+
+export interface SearchResult {
+  query: string
+  hits: SearchHit[]
+  total: number
+  took_ms: number
+  matched_by: 'tokens' | 'substring' | 'none'
+  suggestions: string[]
+}
+
 export interface Snapshot {
   generated_at: number
   root: string

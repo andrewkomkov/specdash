@@ -61,6 +61,57 @@ Empty list when the project is not a git repository or nothing has touched that 
 on demand only — never during a scan, because a git process per feature would dominate the
 rescan that follows every save.
 
+## GET /api/search?q=...&limit=30&kind=...
+
+Ranked hits across everything the board knows — and, unlike the board's own filter, across
+the *text* of the documents. The snapshot has never carried document bodies, so before this
+endpoint existed nothing could find a sentence written inside a `spec.md`.
+
+```json
+{
+  "query": "read-only guarantee",
+  "total": 13,
+  "took_ms": 2.92,
+  "matched_by": "tokens",
+  "suggestions": [],
+  "hits": [
+    {
+      "kind": "document",
+      "project_id": "specDash",
+      "feature_id": "001-spec-kit-live-board",
+      "ref": "plan.md",
+      "file": "plan.md",
+      "title": "Plan",
+      "subtitle": "A live board for every spec-kit project on disk · specDash",
+      "snippet": "…what makes the \u0002read-only guarantee\u0003 cheap to keep…",
+      "score": 8.41
+    }
+  ]
+}
+```
+
+- `kind` is one of `feature`, `story`, `task`, `requirement`, `checklist`, `document`. Passing
+  an unknown one is a `400` rather than silently returning everything.
+- `ref` identifies the thing inside its feature: a task id, a story id, a requirement id, or a
+  document path. With `file` set, the drawer can open straight onto the document.
+- `snippet` marks the match with `\u0002` and `\u0003` rather than with HTML, so the payload
+  is never markup and the browser never has to sanitise it.
+- `matched_by` says how it was found — `tokens` for the ranked index, `substring` for the
+  trigram fallback, `none` when nothing matched. A card says why it sits where it does; a
+  result says how it was reached.
+- `suggestions` carries a corrected query when nothing matched and the words look mistyped.
+  It corrects the terms rather than guessing a title, because a mistyped query is nothing
+  like a whole sentence.
+- `limit` is clamped to 100.
+
+The index is SQLite FTS5, held **in memory**, rebuilt inside the same worker thread as every
+rescan and swapped in with a single assignment — a search arriving mid-rescan is answered by
+the previous index rather than by a half-built one. An index file would have been the first
+thing SpecDash ever wrote to disk.
+
+Query text is escaped, never interpolated: `read-only` is a thing to look for, and FTS5 reads
+`-` as syntax.
+
 ## GET /api/projects/{project_id}/history
 
 Task completion over time for a whole project, reconstructed from git. On demand only,

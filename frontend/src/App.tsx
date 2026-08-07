@@ -41,6 +41,9 @@ const FeatureDrawer = lazy(() =>
   import('./components/FeatureDrawer').then((m) => ({ default: m.FeatureDrawer })),
 )
 const Trend = lazy(() => import('./components/Trend').then((m) => ({ default: m.Trend })))
+const SearchPalette = lazy(() =>
+  import('./components/SearchPalette').then((m) => ({ default: m.SearchPalette })),
+)
 
 export default function App() {
   const { t, n, ago, lang, setLang } = useT()
@@ -63,7 +66,10 @@ export default function App() {
     project: string
     feature: string
     story?: string
+    file?: string
+    tab?: string
   } | null>(null)
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   const projects = snapshot?.projects ?? []
   const visibleProjects = projects.filter((p) => !hidden.includes(p.id))
@@ -119,6 +125,12 @@ export default function App() {
       }
       if (e.key === 'r' && (e.metaKey || e.ctrlKey) === false && document.activeElement?.tagName !== 'INPUT') {
         refresh()
+      }
+      // The palette answers a different question from the header filter, so it
+      // gets the shortcut people already reach for.
+      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setPaletteOpen(true)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -197,6 +209,17 @@ export default function App() {
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
             />
+            <Tooltip label={`${t('search.open.hint')}  ⌘K`} withArrow>
+              <ActionIcon
+                variant="default"
+                size="lg"
+                aria-label={t('search.open.hint')}
+                data-testid="open-search"
+                onClick={() => setPaletteOpen(true)}
+              >
+                <IconSearch size={16} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('app.rescan')} withArrow>
               <ActionIcon variant="default" size="lg" onClick={refresh}>
                 <IconRefresh size={16} />
@@ -359,7 +382,33 @@ export default function App() {
         <FeatureDrawer
           feature={openFeature}
           focusStory={selected?.story ?? null}
+          focusFile={selected?.file ?? null}
+          initialTab={selected?.tab ?? null}
           onClose={() => setSelected(null)}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SearchPalette
+          opened={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          generation={snapshot?.generated_at ?? 0}
+          onOpen={(hit) =>
+            setSelected({
+              project: hit.project_id,
+              feature: hit.feature_id,
+              story: hit.kind === 'story' ? hit.ref : undefined,
+              file: hit.kind === 'document' ? hit.ref : undefined,
+              tab:
+                hit.kind === 'document'
+                  ? 'docs'
+                  : hit.kind === 'task'
+                    ? 'tasks'
+                    : hit.kind === 'checklist'
+                      ? 'checklists'
+                      : 'overview',
+            })
+          }
         />
       </Suspense>
     </AppShell>

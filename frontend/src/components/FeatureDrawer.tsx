@@ -47,10 +47,14 @@ interface Props {
   feature: Feature | null
   /** story to expand on open, when the drawer was reached from a story card */
   focusStory?: string | null
+  /** document to show, when the drawer was reached from a search hit */
+  focusFile?: string | null
+  /** tab to land on, when something more specific than the overview was chosen */
+  initialTab?: string | null
   onClose: () => void
 }
 
-export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
+export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onClose }: Props) {
   const { t, ago } = useT()
   const [tab, setTab] = useState<string | null>('overview')
   const [openFile, setOpenFile] = useState<string | null>(null)
@@ -58,9 +62,11 @@ export function FeatureDrawer({ feature, focusStory, onClose }: Props) {
   useEffect(() => {
     // The tasks with no story have no row in the overview to expand, so that
     // card lands on the task list instead of on a panel that ignores the click.
-    setTab(focusStory === '—' ? 'tasks' : 'overview')
-    setOpenFile(feature?.artifacts.find((a) => a.key === 'spec')?.file ?? null)
-  }, [feature?.id, feature?.project_id, focusStory])
+    setTab(initialTab ?? (focusStory === '—' ? 'tasks' : 'overview'))
+    setOpenFile(
+      focusFile ?? feature?.artifacts.find((a) => a.key === 'spec')?.file ?? null,
+    )
+  }, [feature?.id, feature?.project_id, focusStory, focusFile, initialTab])
 
   if (!feature) return null
   const accent = projectColor(feature.project_id)

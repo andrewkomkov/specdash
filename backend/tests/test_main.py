@@ -406,3 +406,45 @@ def test_a_disconnected_client_is_forgotten(client):
     with client.websocket_connect("/ws") as ws:
         ws.receive_json()
     assert main.hub.clients == set()
+
+
+# --------------------------------------------------------------------------
+# search
+# --------------------------------------------------------------------------
+
+
+def test_search_answers_from_the_index_built_with_the_scan(client):
+    body = client.get("/api/search", params={"q": "contracts directory exists"}).json()
+
+    assert body["total"] > 0
+    assert body["matched_by"] == "tokens"
+    assert any(h["kind"] == "document" for h in body["hits"])
+
+
+def test_an_unknown_kind_is_refused_rather_than_ignored(client):
+    assert client.get("/api/search", params={"q": "x", "kind": "nonsense"}).status_code == 400
+
+
+def test_a_kind_narrows_the_results(client):
+    body = client.get("/api/search", params={"q": "the", "kind": "task"}).json()
+
+    assert {h["kind"] for h in body["hits"]} == {"task"}
+
+
+def test_the_limit_is_clamped_rather_than_trusted(client):
+    body = client.get("/api/search", params={"q": "the", "limit": 100000}).json()
+
+    assert len(body["hits"]) <= 100
+
+
+def test_searching_before_the_first_scan_builds_the_index_on_demand(monkeypatch):
+    monkeypatch.setattr(main.settings, "roots", [WORKSPACE])
+    monkeypatch.setattr(main.settings, "projects", [])
+    monkeypatch.setattr(main.settings, "with_git", False)
+    main.hub.snapshot = None
+    main.hub.index = None
+
+    body = TestClient(main.app).get("/api/search", params={"q": "task"}).json()
+
+    assert body["total"] >= 0
+    assert main.hub.index is not None
