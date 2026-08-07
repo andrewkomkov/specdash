@@ -15,7 +15,7 @@ case — a new commit that touched one file — reparses one file.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import git, parsing
@@ -87,7 +87,7 @@ def _blob_ids(project_path: Path, requests: list[str]) -> dict[str, str]:
     if raw is None:
         return {}
     out: dict[str, str] = {}
-    for request, line in zip(requests, raw.decode("utf-8", "replace").splitlines()):
+    for request, line in zip(requests, raw.decode("utf-8", "replace").splitlines(), strict=False):
         fields = line.split()
         if len(fields) >= 2 and fields[1] == "blob":
             out[request] = fields[0]
@@ -132,8 +132,8 @@ def _days_since(iso: str) -> int:
     except ValueError:
         return 0
     if when.tzinfo is None:
-        when = when.replace(tzinfo=timezone.utc)
-    return max(0, (datetime.now(timezone.utc) - when).days)
+        when = when.replace(tzinfo=UTC)
+    return max(0, (datetime.now(UTC) - when).days)
 
 
 def project_history(
@@ -178,7 +178,10 @@ def project_history(
     if not task_paths:
         return _remember(
             key,
-            _unavailable(project_id, "no tasks.md has ever been committed, so there is nothing to count"),
+            _unavailable(
+                project_id,
+                "no tasks.md has ever been committed, so there is nothing to count",
+            ),
         )
 
     ordered_paths = sorted(task_paths)
@@ -205,7 +208,9 @@ def project_history(
         if not total:
             continue  # a revision predating any task list is not a data point
         points.append(
-            HistoryPoint(sha=sha, date=date, subject=subject, done=done, total=total, features=files)
+            HistoryPoint(
+                sha=sha, date=date, subject=subject, done=done, total=total, features=files
+            )
         )
     points.reverse()  # oldest first: a chart reads left to right
 

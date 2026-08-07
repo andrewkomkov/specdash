@@ -1,0 +1,52 @@
+name: Bug report
+description: Something on the board disagrees with the files on disk
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SpecDash is a viewer, so most bugs are a disagreement between what a file says and
+        what the board shows. The more of that disagreement you can paste, the faster it goes.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The image tag, or the output of `docker inspect specdash --format '{{index .Config.Labels "org.opencontainers.image.version"}}'`
+      placeholder: "0.4.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Linux, Windows, other]
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What the board showed, and what you expected
+      description: Which column, which counts, which card.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: The files it was reading
+      description: >
+        The relevant part of the `spec.md`, `tasks.md` or `plan.md` — the shapes matter more
+        than the content, so feel free to redact the words and keep the structure.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Container logs
+      description: "`docker compose logs specdash` — optional, but often decisive."
+      render: shell

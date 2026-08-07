@@ -5,7 +5,9 @@ services:
     build: .
     container_name: specdash
     ports:
-      - "${SPECDASH_PORT:-8420}:8420"
+      # Bound to localhost by default: the service has no authentication, so
+      # publishing it on 0.0.0.0 publishes your specifications to your network.
+      - "${SPECDASH_BIND:-127.0.0.1}:${SPECDASH_PORT:-8420}:8420"
     environment:
       # Where to look inside the container. The host path is mapped below.
       SPECDASH_ROOTS: /projects

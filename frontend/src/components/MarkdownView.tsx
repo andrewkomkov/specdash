@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import classes from './MarkdownView.module.css'
+import { useT } from '../i18n'
 
 interface Props {
   projectId: string
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function MarkdownView({ projectId, featureId, file }: Props) {
+  const { t } = useT()
   const [text, setText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,7 +35,7 @@ export function MarkdownView({ projectId, featureId, file }: Props) {
     }
   }, [projectId, featureId, file])
 
-  if (error) return <Alert color="red" title="Не удалось открыть файл">{error}</Alert>
+  if (error) return <Alert color="red" title={t('drawer.loadFailed', { file })}>{error}</Alert>
   if (text === null) return <Loader size="sm" />
 
   const isMarkdown = file.endsWith('.md')

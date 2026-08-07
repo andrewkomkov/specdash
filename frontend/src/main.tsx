@@ -3,6 +3,7 @@ import { createTheme, MantineProvider } from '@mantine/core'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { LangProvider } from './LangProvider'
 import './index.css'
 
 const theme = createTheme({
@@ -17,7 +18,9 @@ const theme = createTheme({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
-      <App />
+      <LangProvider>
+        <App />
+      </LangProvider>
     </MantineProvider>
   </StrictMode>,
 )

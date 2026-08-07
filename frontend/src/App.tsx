@@ -31,7 +31,8 @@ import { Board, StoryBoard } from './components/Board'
 import type { StoryRow } from './components/StoryCard'
 import type { Feature } from './types'
 import { useSnapshot } from './useSnapshot'
-import { projectColor, relativeTime } from './utils'
+import { projectColor } from './utils'
+import { LANGS, useT } from './i18n'
 import classes from './App.module.css'
 
 // Both pull in weight nobody needs for the first paint of the board: the drawer
@@ -42,6 +43,7 @@ const FeatureDrawer = lazy(() =>
 const Trend = lazy(() => import('./components/Trend').then((m) => ({ default: m.Trend })))
 
 export default function App() {
+  const { t, n, ago, lang, setLang } = useT()
   const { snapshot, connection, reason, recent, refresh } = useSnapshot()
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const [query, setQuery] = useState('')
@@ -158,7 +160,7 @@ export default function App() {
                 SpecDash
               </Title>
               <Text size="10px" c="dimmed">
-                spec-kit · только чтение
+                {t('app.tagline')}
               </Text>
             </Box>
             <Indicator
@@ -181,29 +183,38 @@ export default function App() {
               value={view}
               onChange={(v) => setView(v as 'features' | 'stories' | 'trend')}
               data={[
-                { value: 'features', label: 'Фичи' },
-                { value: 'stories', label: 'Истории' },
-                { value: 'trend', label: 'Динамика' },
+                { value: 'features', label: t('view.features') },
+                { value: 'stories', label: t('view.stories') },
+                { value: 'trend', label: t('view.trend') },
               ]}
             />
             <TextInput
               id="specdash-search"
               size="xs"
               w={260}
-              placeholder="Поиск по фичам, историям и задачам   /"
+              placeholder={t('app.search')}
               leftSection={<IconSearch size={14} />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
             />
-            <Tooltip label="Пересканировать (r)" withArrow>
+            <Tooltip label={t('app.rescan')} withArrow>
               <ActionIcon variant="default" size="lg" onClick={refresh}>
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Тема" withArrow>
+            <Tooltip label={t('app.theme')} withArrow>
               <ActionIcon variant="default" size="lg" onClick={toggleColorScheme}>
                 {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
               </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('app.language')} withArrow>
+              <SegmentedControl
+                size="xs"
+                aria-label={t('app.language')}
+                value={lang}
+                onChange={(v) => setLang(v as (typeof LANGS)[number])}
+                data={LANGS.map((code) => ({ value: code, label: code.toUpperCase() }))}
+              />
             </Tooltip>
           </Group>
         </Group>
@@ -250,13 +261,13 @@ export default function App() {
                 withArrow
                 label={
                   view === 'stories'
-                    ? 'задачи показанных историй'
-                    : 'задачи показанных фич'
+                    ? t('board.tasksOfShownStories')
+                    : t('board.tasksOfShownFeatures')
                 }
               >
                 <Group gap={8} wrap="nowrap" w={230}>
                   <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                    {totals.done}/{totals.total} задач
+                    {totals.done}/{totals.total} {t('board.tasks')}
                   </Text>
                   <Progress value={pct} size="sm" radius="xl" color="teal" style={{ flex: 1 }} />
                   <Text size="xs" fw={700} w={32} ta="right">
@@ -266,12 +277,12 @@ export default function App() {
               </Tooltip>
             )}
             <Badge variant="default" radius="sm" size="sm">
-              {view === 'stories' ? `${storyRows.length} историй` : `${features.length} фич`}
+              {view === 'stories' ? n(storyRows.length, 'story') : n(features.length, 'feature')}
             </Badge>
             {snapshot && (
-              <Tooltip label={reason || 'последний скан'} withArrow>
+              <Tooltip label={reason || t('app.lastScan')} withArrow>
                 <Text size="10px" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                  {relativeTime(snapshot.generated_at)} · {snapshot.scan_ms} мс
+                  {ago(snapshot.generated_at)} · {t('app.ms', { ms: snapshot.scan_ms })}
                 </Text>
               </Tooltip>
             )}
@@ -284,15 +295,14 @@ export default function App() {
           <Stack align="center" justify="center" h="60vh" gap="xs">
             <Loader />
             <Text c="dimmed" size="sm">
-              Сканирую проекты…
+              {t('app.scanning')}
             </Text>
           </Stack>
         ) : projects.length === 0 ? (
           <Stack align="center" justify="center" h="60vh" gap={4}>
-            <Text fw={600}>Проекты spec-kit не найдены</Text>
+            <Text fw={600}>{t('app.noProjects')}</Text>
             <Text c="dimmed" size="sm" ta="center" maw={520}>
-              Смонтируйте папку с проектами в /projects (PROJECTS_ROOT в .env). Проектом считается
-              каталог, где есть .specify/ или specs/.
+              {t('app.noProjectsHint')}
             </Text>
           </Stack>
         ) : (
@@ -304,7 +314,7 @@ export default function App() {
                   variant="light"
                   radius="md"
                   icon={<IconAlertTriangle size={16} />}
-                  title={`${broken.length} проект(а) прочитаны не полностью`}
+                  title={t('app.brokenTitle', { count: broken.length })}
                 >
                   <Stack gap={2}>
                     {broken.map((project) => (

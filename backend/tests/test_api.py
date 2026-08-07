@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from conftest import WORKSPACE
 from fastapi.testclient import TestClient
 
 from app import main, scanner
-from conftest import WORKSPACE
 
 
 @pytest.fixture(scope="module")

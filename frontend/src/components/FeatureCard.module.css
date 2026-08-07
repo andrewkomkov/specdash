@@ -9,6 +9,12 @@
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
+.card:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-5);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+}
+
 .card:hover {
   transform: translateY(-2px);
   box-shadow: var(--mantine-shadow-md);
@@ -48,7 +54,13 @@
     animation: none;
     border-color: var(--mantine-color-green-6);
   }
-  .card:hover {
+  .card:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-5);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+}
+
+.card:hover {
     transform: none;
   }
 }

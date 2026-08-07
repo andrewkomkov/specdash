@@ -4,12 +4,12 @@ import { column, gotoBoard, search, setGrain } from './helpers'
 test.describe('the board can be read at two grains', () => {
   test('story grain draws one card per story plus the tasks that name none', async ({ page }) => {
     await gotoBoard(page)
-    await setGrain(page, 'Истории')
+    await setGrain(page, 'Stories')
 
     // 7 stories across the fixture, plus a leftover card for atlas/001 and
     // beacon/001 — the two features with tasks that name no story.
     await expect(page.getByTestId('story-card')).toHaveCount(9)
-    await expect(page.getByRole('banner')).toContainText('9 историй')
+    await expect(page.getByRole('banner')).toContainText('9 stories')
 
     const leftovers = page.getByTestId('story-card').filter({ hasText: 'Tasks with no story' })
     await expect(leftovers).toHaveCount(2)
@@ -40,15 +40,15 @@ test.describe('the board can be read at two grains', () => {
     page,
   }) => {
     await gotoBoard(page)
-    await expect(page.getByRole('banner')).toContainText('11/15 задач')
+    await expect(page.getByRole('banner')).toContainText('11/15 tasks')
 
-    await setGrain(page, 'Истории')
-    await expect(page.getByRole('banner')).toContainText('11/15 задач')
+    await setGrain(page, 'Stories')
+    await expect(page.getByRole('banner')).toContainText('11/15 tasks')
   })
 
   test('the chosen grain survives a reload', async ({ page }) => {
     await gotoBoard(page)
-    await setGrain(page, 'Истории')
+    await setGrain(page, 'Stories')
     await expect(page.getByTestId('story-card').first()).toBeVisible()
 
     await page.reload()
@@ -61,13 +61,13 @@ test.describe('the board can be read at two grains', () => {
     await search(page, 'zoom')
 
     await expect(page.getByTestId('story-card')).toHaveCount(1)
-    await expect(page.getByRole('banner')).toContainText('1 историй')
-    await expect(page.getByRole('banner')).toContainText('0/2 задач')
+    await expect(page.getByRole('banner')).toContainText('1 story')
+    await expect(page.getByRole('banner')).toContainText('0/2 tasks')
 
     // The same needle at feature grain matches the whole feature instead.
-    await setGrain(page, 'Фичи')
+    await setGrain(page, 'Features')
     await expect(page.getByTestId('feature-card')).toHaveCount(1)
-    await expect(page.getByRole('banner')).toContainText('4/7 задач')
+    await expect(page.getByRole('banner')).toContainText('4/7 tasks')
   })
 
   test('a search matching nothing empties the board without breaking it', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('the board can be read at two grains', () => {
     await search(page, 'zzzznothing')
 
     await expect(page.getByTestId('feature-card')).toHaveCount(0)
-    await expect(page.getByRole('banner')).toContainText('0 фич')
-    await expect(column(page, 'done')).toContainText('пусто')
+    await expect(page.getByRole('banner')).toContainText('0 features')
+    await expect(column(page, 'done')).toContainText('empty')
   })
 })

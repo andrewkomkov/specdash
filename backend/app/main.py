@@ -155,7 +155,12 @@ async def lifespan(app: FastAPI):
             await task
 
 
-app = FastAPI(title="SpecDash", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(
+    title="SpecDash",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
+)
 
 
 @app.get("/api/health")

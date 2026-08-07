@@ -7,9 +7,9 @@ them shows up on the board as a wrong number, which is worse than a crash.
 
 from __future__ import annotations
 
-from app import parsing
 from conftest import read
 
+from app import parsing
 
 # --------------------------------------------------------------------------
 # tasks.md

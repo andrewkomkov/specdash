@@ -1,0 +1,65 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# One deployment at a time; a queued run replaces an older one rather than
+# racing it.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Build & publish the landing page
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # The page is self-contained by design — the application promises to load
+      # nothing from the internet, and a landing page that broke that promise
+      # would be advertising something the tool does not do. Assert it rather
+      # than trusting a reviewer to notice a CDN creeping in.
+      - name: Assert the page requests nothing from a third party
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          # Links a reader may click, and the SVG namespace in the inline favicon,
+          # are not requests. Anything else with an origin would be.
+          ALLOWED = {"github.com", "www.w3.org"}
+          offenders = []
+          for path in list(pathlib.Path("site").rglob("*.html")) + list(
+              pathlib.Path("site").rglob("*.css")
+          ):
+              for match in re.finditer(r"https?://([^/\"')\s]+)", path.read_text()):
+                  if match.group(1) not in ALLOWED:
+                      offenders.append((path.name, match.group(1)))
+
+          if offenders:
+              print("FAIL: the landing page references external origins:", offenders)
+              sys.exit(1)
+          print("no third-party origins referenced")
+          PY
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

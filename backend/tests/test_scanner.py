@@ -6,8 +6,9 @@ import hashlib
 import os
 from pathlib import Path
 
-from app import parsing, scanner
 from conftest import DEMO, WORKSPACE
+
+from app import parsing, scanner
 
 
 def test_stage_is_derived_from_artefacts_not_from_the_status_line(demo_project):

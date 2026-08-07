@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpecDash — a live, read-only board for your spec-kit projects</title>
+<meta name="description" content="Point it at the folder holding your repositories. Every spec-kit feature, laid out by pipeline stage, updating as your agent writes. It never writes back.">
+<meta property="og:title" content="SpecDash">
+<meta property="og:description" content="A live, read-only board for every spec-kit project on your disk.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+<!--
+  Self-contained on purpose. The application promises to load nothing from the
+  internet — no CDN, no font host, no telemetry — and a landing page that broke
+  that promise would be advertising something it does not do.
+-->
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12161b;
+    --line: #222a33;
+    --ink: #e6edf3;
+    --dim: #9aa7b4;
+    --accent: #2dd4a7;
+    --accent-dim: #1d9e7c;
+    color-scheme: dark light;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff;
+      --panel: #f6f8fa;
+      --line: #d8dee4;
+      --ink: #1c2128;
+      --dim: #57606a;
+      --accent: #0f9d76;
+      --accent-dim: #0b7c5d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  code, kbd, pre {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 0.9em;
+  }
+
+  header { padding: 72px 0 40px; text-align: center; }
+  .mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    color: #04120d; font-size: 28px; margin-bottom: 18px;
+  }
+  h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .lede { font-size: clamp(1.05rem, 2.6vw, 1.3rem); color: var(--dim); max-width: 40ch; margin: 0 auto 28px; }
+
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .btn {
+    display: inline-block; padding: 11px 20px; border-radius: 10px;
+    text-decoration: none; font-weight: 600; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--accent); color: #04120d; }
+  .btn-ghost { border-color: var(--line); color: var(--ink); }
+  .btn:hover { filter: brightness(1.08); }
+
+  pre.run {
+    text-align: left; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 22px auto 0;
+    max-width: 720px; color: var(--ink);
+  }
+  pre.run .c { color: var(--dim); }
+
+  figure { margin: 0 0 18px; }
+  figure img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--line); border-radius: 14px;
+  }
+  figcaption { color: var(--dim); font-size: 0.92rem; padding-top: 10px; }
+
+  section { padding: 52px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(1.4rem, 3.4vw, 1.9rem); margin: 0 0 10px; letter-spacing: -0.01em; }
+  .sub { color: var(--dim); max-width: 62ch; margin: 0 0 28px; }
+
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--dim); font-size: 0.95rem; }
+
+  .facts { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; padding: 30px 0 0; }
+  .fact { text-align: center; }
+  .fact b { display: block; font-size: 1.7rem; color: var(--accent); }
+  .fact span { color: var(--dim); font-size: 0.88rem; }
+
+  .warn {
+    background: color-mix(in srgb, #f0883e 12%, transparent);
+    border: 1px solid color-mix(in srgb, #f0883e 40%, transparent);
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .warn h3 { margin: 0 0 6px; font-size: 1.02rem; }
+  .warn p { margin: 0; color: var(--dim); font-size: 0.95rem; }
+
+  footer { padding: 40px 0 64px; color: var(--dim); font-size: 0.9rem; text-align: center; border-top: 1px solid var(--line); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="mark">🗂️</div>
+    <h1>Every spec-kit project,<br>on one board.</h1>
+    <p class="lede">Point it at the folder holding your repositories. It never writes back.</p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/andrewkomkov/specdash">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/andrewkomkov/specdash/pkgs/container/specdash">Get the image</a>
+    </div>
+
+    <pre class="run"><span class="c"># one image, one port, no database, no internet</span>
+docker run -d --name specdash -p 127.0.0.1:8420:8420 \
+  -v "$HOME/projects:/projects:ro" \
+  -e WATCHFILES_FORCE_POLLING=1 \
+  ghcr.io/andrewkomkov/specdash:latest</pre>
+
+    <div class="facts">
+      <div class="fact"><b>6</b><span>pipeline stages</span></div>
+      <div class="fact"><b>0</b><span>bytes written to your repos</span></div>
+      <div class="fact"><b>100%</b><span>backend line coverage</span></div>
+      <div class="fact"><b>2</b><span>languages</span></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>The board</h2>
+    <p class="sub">
+      Every feature of every project, laid out by the stage its files justify. Each card says
+      <em>why</em> it sits where it does — <code>all 38 tasks ticked</code>, <code>plan.md
+      present, no tasks.md yet</code> — because a placement you cannot explain is a placement
+      you cannot trust.
+    </p>
+    <figure>
+      <img src="board-features.png" alt="The SpecDash board with five projects laid out across six columns">
+      <figcaption>Five real projects. The artefacts outrank the prose: a spec still saying “ready for planning” over a fully ticked task list lands in Done.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Two grains</h2>
+    <p class="sub">
+      One card per feature when many projects are open. One card per user story when a handful
+      of features would leave the columns nearly empty — each story placed by its own ticked
+      tasks, not its feature’s.
+    </p>
+    <figure>
+      <img src="board-stories.png" alt="The same board drawn with one card per user story">
+      <figcaption>Setup, foundational and polish tasks name no story, so they get a card of their own. Without it the column totals would quietly stop adding up.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>The whole feature, one click away</h2>
+    <figure>
+      <img src="drawer-overview.png" alt="The detail drawer showing user stories, technical context and requirements">
+      <figcaption>Stories with their acceptance scenarios, the technical context, requirements, success criteria, checklists, and every document rendered in place.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Movement, not just position</h2>
+    <p class="sub">
+      Task completion per commit, read straight out of <code>git log</code>. Nothing is stored.
+      The dashed line is the total, because work being added is half the story and a chart of
+      percentages alone hides it.
+    </p>
+    <figure>
+      <img src="trend.png" alt="Completion over time for five projects, drawn from git history">
+      <figcaption>A project that is not under git says so, rather than drawing an empty chart.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Read-only, structurally</h2>
+    <p class="sub">The projects you point it at are your real work. SpecDash treats them as someone else’s.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>No write path</h3>
+        <p>The code only opens files for reading. No cache file, no lock file, no “fixing” a malformed document.</p>
+      </div>
+      <div class="card">
+        <h3>Enforced by the kernel</h3>
+        <p>Every project is mounted <code>:ro</code>, so a write is refused even if a future line of code asks for one. CI tries it on every build.</p>
+      </div>
+      <div class="card">
+        <h3>Git without locks</h3>
+        <p>A read-only subcommand allow-list with <code>--no-optional-locks</code>. No <code>index.lock</code> appears while you are mid-rebase.</p>
+      </div>
+      <div class="card">
+        <h3>Nothing leaves</h3>
+        <p>No CDN, no font host, no telemetry, no update check. Every asset is inside the image — including this page.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What it does not protect</h2>
+    <div class="warn">
+      <h3>SpecDash has no authentication.</h3>
+      <p>
+        No login, no token, no per-project permission. Anyone who can reach the port can read
+        every specification under the mounted root. The command above binds to
+        <code>127.0.0.1</code> deliberately — if you want it reachable from elsewhere, put
+        something in front that asks who is calling.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>
+      MIT licensed · built for <a href="https://github.com/github/spec-kit">spec-kit</a> ·
+      <a href="https://github.com/andrewkomkov/specdash">source</a> ·
+      <a href="https://github.com/andrewkomkov/specdash/blob/main/SECURITY.md">security</a>
+    </p>
+    <p>SpecDash is specified the way it expects its subjects to be — every feature here has a spec, a plan and a task list in the repository.</p>
+  </div>
+</footer>
+
+</body>
+</html>

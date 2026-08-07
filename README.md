@@ -1,67 +1,88 @@
+<div align="center">
+
 # SpecDash
 
-A live, read-only board for every [spec-kit](https://github.com/github/spec-kit) project on
-your disk.
+**A live, read-only board for every [spec-kit](https://github.com/github/spec-kit) project on your disk.**
+
+[![CI](https://github.com/andrewkomkov/specdash/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewkomkov/specdash/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/andrewkomkov/specdash?logo=github&color=teal)](https://github.com/andrewkomkov/specdash/releases)
+[![Image](https://img.shields.io/badge/ghcr.io-specdash-2496ed?logo=docker&logoColor=white)](https://github.com/andrewkomkov/specdash/pkgs/container/specdash)
+[![Coverage](https://img.shields.io/badge/backend%20coverage-100%25-brightgreen)](backend/pytest.ini)
+[![Licence](https://img.shields.io/github/license/andrewkomkov/specdash?color=blue)](LICENSE)
+
+**[specdash on the web →](https://andrewkomkov.github.io/specdash/)**
 
 Point it at the directory where you keep your repositories. It finds every spec-kit project
-underneath, lays each feature out across the six stages of the pipeline — Specify, Clarify,
-Plan, Tasks, Implement, Done — and follows the files as your agent writes them. It never
-writes back.
+underneath, lays each feature out across the six stages of the pipeline, and follows the
+files as your agent writes them. It never writes back.
+
+![The board, one card per feature](.github/assets/board-features.png)
+
+</div>
+
+## Run it
 
 ```bash
-cp .env.example .env      # set PROJECTS_ROOT
-docker compose up -d
-open http://localhost:8420
-```
-
-One image. One port. No configuration per project, no database, no internet.
-
-Or without cloning anything, straight from the published image
-([`ghcr.io/andrewkomkov/specdash`](https://github.com/andrewkomkov/specdash/pkgs/container/specdash),
-amd64 + arm64, built and pushed by CI on every release):
-
-```bash
-docker run -d --name specdash -p 8420:8420 \
+docker run -d --name specdash -p 127.0.0.1:8420:8420 \
   -v "$HOME/projects:/projects:ro" \
   -e WATCHFILES_FORCE_POLLING=1 \
   ghcr.io/andrewkomkov/specdash:latest
 ```
 
+Then open <http://localhost:8420>. One image, one port, no configuration per project, no
+database, no internet. Or clone the repository and use compose:
+
+```bash
+cp .env.example .env      # set PROJECTS_ROOT
+docker compose up -d
+```
+
 ## What it shows
 
-**The board.** One column per pipeline stage, one card per feature, all projects at once.
-A card carries the feature number and project, the title and summary, task progress, each
-user story with its priority and completion, which documents exist, checklist completion,
-open `[NEEDS CLARIFICATION]` markers, and how long ago the files changed. The feature named
-by `.specify/feature.json` is marked `current`.
-
 **Every card says why it is where it is.** `all 38 tasks ticked`, `plan.md present, no
-tasks.md yet`, `2 open clarification marker(s)`. Placement is derived from the artefacts on
-disk, and the artefacts outrank the prose: a spec that still says "ready for planning" over
-a fully ticked `tasks.md` lands in Done, because a checkbox is a claim about code.
+tasks.md yet`, `2 open clarification marker(s)`. Placement comes from the artefacts on disk,
+and the artefacts outrank the prose: a spec that still says "ready for planning" over a
+fully ticked `tasks.md` lands in Done, because a checkbox is a claim about code.
 
-**Click a card** for the whole feature: user stories with their acceptance scenarios, the
-task list grouped by phase or by story and filterable to the unfinished, the quality
-checklists, every document rendered in place, and the git history that touched the feature
-folder.
+### Read it at two grains
 
-**It updates itself.** Run `/speckit-tasks` in one window with the board open in another:
-progress moves, cards change column, and whatever just changed pulses.
+One card per feature is right when several projects are open at once. One card per **user
+story** is right when a handful of features would otherwise leave the columns nearly empty —
+each story placed by its *own* ticked tasks rather than by its feature's. Setup, foundational
+and polish tasks name no story, so they get a card of their own; without it the column totals
+would quietly stop adding up.
 
-**Read the board at two grains.** *Фичи* is one card per feature — the right density when
-several projects are open at once. *Истории* is one card per user story, each placed by its
-own ticked tasks rather than by its feature's, which is what you want when a handful of
-features would otherwise leave the columns nearly empty. Setup, foundational and polish
-tasks name no story, so they get a card of their own — without it the column totals would
-quietly stop adding up. The choice is remembered between visits, and the header total
-follows it: it counts the cards on screen, so it and the badge beside it always describe
-the same set.
+![The same board, one card per user story](.github/assets/board-stories.png)
 
-**Switch to Динамика** for movement rather than position: task completion per commit for
-each project, read straight out of `git log` — no database, nothing stored. The dashed line
-is the total, because work being added is half the story and a chart of percentages alone
-hides it. Underneath, the feature folders no commit has touched in longest. A project that
-is not under git says so plainly instead of showing an empty chart.
+### Open a card for the whole feature
+
+User stories with their acceptance scenarios, the technical context, requirements, success
+criteria and open questions — and the task list grouped by phase or by story, filterable to
+the unfinished. Every document in the feature folder is rendered in place.
+
+![The detail drawer](.github/assets/drawer-overview.png)
+
+![The task list inside the drawer](.github/assets/drawer-tasks.png)
+
+### See whether anything is moving
+
+Task completion per commit, read straight out of `git log` — no database, nothing stored.
+The dashed line is the total, because work being added is half the story and a chart of
+percentages alone hides it. Underneath, the feature folders no commit has touched in
+longest. A project that is not under git says so rather than drawing an empty chart.
+
+![Completion over time, per project](.github/assets/trend.png)
+
+### It updates itself
+
+Run `/speckit-tasks` in one window with the board open in another: progress moves, cards
+change column, and whatever just changed pulses. No reload, no button.
+
+### It speaks your language
+
+English and Russian, taken from the browser and switchable in the header. Your own writing —
+feature titles, task text, summaries — is never translated. It is your document, not our
+copy.
 
 ## Read-only, structurally
 
@@ -71,21 +92,31 @@ The projects you point it at are your real work. SpecDash treats them as someone
   lock file, no "fixing" a malformed document;
 - `docker-compose.yml` mounts every project path `:ro`, so the kernel refuses a write even
   if a future line of code asks for one;
-- the container itself runs `read_only`, non-root, with `no-new-privileges`;
-- git is limited to `log` and `rev-parse` with `--no-optional-locks`, so no `index.lock`
-  can appear in your working tree while you are mid-rebase;
+- the container runs `read_only`, non-root, with `no-new-privileges`;
+- git is limited to a read-only subcommand allow-list with `--no-optional-locks`, so no
+  `index.lock` can appear in your working tree while you are mid-rebase;
 - every checkbox on screen is genuinely read-only. There is no drag-and-drop between
   columns, because moving a card would mean editing your files.
 
-Verify it yourself:
+Verify it yourself — CI does exactly this on every build and fails if the write succeeds:
 
 ```bash
 docker compose exec specdash sh -c 'touch /projects/some-repo/specs/PROOF'
 # touch: /projects/some-repo/specs/PROOF: Read-only file system
 ```
 
-The page also loads nothing from the internet — no CDN, no fonts, no telemetry. Every asset
-is inside the image.
+The page also loads nothing from the internet — no CDN, no fonts, no telemetry.
+
+## What it does not protect
+
+**SpecDash has no authentication.** No login, no token, no per-project permission. Anyone who
+can reach the port can read every specification, plan and task list under the mounted root.
+
+The container listens on every interface inside itself, so how you publish the port decides
+who can read your specs. Both commands above bind to `127.0.0.1` deliberately. If you want it
+reachable from elsewhere, put something in front that asks who is calling.
+
+See [SECURITY.md](SECURITY.md) for the rest of the threat model.
 
 ## Configuration
 
@@ -94,6 +125,7 @@ All of it is optional except the first line.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PROJECTS_ROOT` | *(required)* | host directory mounted read-only at `/projects` |
+| `SPECDASH_BIND` | `127.0.0.1` | host interface to publish on — `0.0.0.0` exposes the board to your network |
 | `SPECDASH_PORT` | `8420` | host port |
 | `SPECDASH_MAX_DEPTH` | `2` | how deep under the root to look for projects |
 | `SPECDASH_POLLING` | `1` | poll for changes instead of using inotify — required on macOS and Windows, where bind mounts do not deliver inotify events |
@@ -109,68 +141,53 @@ there is nothing to register, and it appears without a restart.
 ## Development
 
 ```bash
-cd backend && pip install -r requirements-dev.txt
-SPECDASH_ROOTS=$HOME/projects uvicorn app.main:app --reload --port 8420
-python -m pytest                             # parsers, scanner, HTTP surface
+cd backend
+python3.13 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+SPECDASH_ROOTS=$HOME/projects .venv/bin/python -m uvicorn app.main:app --reload --port 8420
 
 cd frontend && npm install && npm run dev    # :5173, proxies /api and /ws
 ```
 
-The backend suite is fixtures of the drift found in real spec-kit output — wrapped values,
-`SC-005a`, checkboxes in sections that are not tasks, a `tasks.md` with no ids at all —
-plus the properties most expensive to get wrong: that a spec's prose never outranks its
-task list, that no `doc?file=` traversal escapes a project, and that a full scan leaves the
-scanned tree byte for byte identical. Coverage of `backend/app/` is 100% and the gate is in
-`pytest.ini`, so it is enforced by running the tests rather than by remembering to look.
-That is a floor, not a claim of correctness — it says every line has been executed, not that
-every behaviour is right.
-
-The end-to-end suite drives the real application in a real browser:
-
-```bash
-cd frontend && npm run build          # the suite serves the built frontend
-cd ../e2e && npm ci && npx playwright install chromium
-npx playwright test
-```
-
-It starts the backend on a port of its own against a checked-in fixture workspace, and
-covers the board, both grains and the remembered preference, search, the drawer's tabs, the
-trend view including the project deliberately left outside git, and one live update — a
-checkbox ticked on disk, waited on until the card changes column. Nothing is mocked: every
-interesting failure this project has had was at the seam between the parser and the screen,
-and a suite replaying a recorded snapshot would be blind to all of them.
-
 Backend is FastAPI + pydantic + watchfiles; frontend is React 19 + Mantine 8 + Vite. The
 domain model lives in `backend/app/models.py` and is mirrored in `frontend/src/types.ts`.
 The HTTP and websocket surface is documented in
-[`specs/001-spec-kit-live-board/contracts/http-api.md`](specs/001-spec-kit-live-board/contracts/http-api.md).
+[`contracts/http-api.md`](specs/001-spec-kit-live-board/contracts/http-api.md).
+
+### The gates
+
+```bash
+cd backend  && .venv/bin/python -m pytest && .venv/bin/ruff check app tests
+cd frontend && npm run build && npm run lint
+cd e2e      && npm ci && npx playwright install chromium && npx playwright test
+```
+
+The backend suite is fixtures of the drift found in real spec-kit output — wrapped values,
+`SC-005a`, checkboxes in sections that are not tasks, a `tasks.md` with no ids at all — plus
+the properties most expensive to get wrong: that a spec's prose never outranks its task list,
+that no `doc?file=` traversal escapes a project, and that a full scan leaves the scanned tree
+byte for byte identical. Coverage is pinned at 100% in `pytest.ini`. That is a floor, not a
+claim of correctness: it says every line has been executed, not that every behaviour is right.
+
+The end-to-end suite drives the real application in a real browser against a checked-in
+fixture workspace — 45 cases in about twenty seconds. Nothing is mocked, because every
+interesting failure this project has had was at the seam between a parser and the screen.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## It is a spec-kit project itself
 
-SpecDash is specified the way it expects its subjects to be — see
-[`specs/001-spec-kit-live-board/`](specs/001-spec-kit-live-board/) for the spec, plan,
-research and task list, and [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
-for the rules the code is held to. Point it at the folder containing this repository and it
-will show you itself.
+SpecDash is specified the way it expects its subjects to be — see [`specs/`](specs/) for
+every feature's spec, plan and task list, and
+[`.specify/memory/constitution.md`](.specify/memory/constitution.md) for the rules the code
+is held to. Point it at the folder containing this repository and it will show you itself,
+which is how the omission behind feature `002` was noticed.
 
 ## Releasing
 
 Conventional commits on `main` drive a rolling release-please pull request; merging it tags
-the release, which is what builds and pushes the multi-arch image. The registry is ghcr, so
-publishing authenticates with the workflow's own token and there is no long-lived registry
-secret anywhere in this repository.
-
-One manual step exists and only once, after the first push: the package starts private, and
-has to be switched to public under **Packages → specdash → Package settings** for
-`docker run ghcr.io/andrewkomkov/specdash:latest` to work without a login.
-
-## Status
-
-All five user stories are shipped: the board, the detail drawer, live updates, the
-one-command read-only container, and progress over time from git history. Every task in
-[`tasks.md`](specs/001-spec-kit-live-board/tasks.md) is ticked, and a checkbox there is a
-claim about the code — the CI job in [`ci.yml`](.github/workflows/ci.yml) scans this
-repository on every push and fails if the claim stops holding.
+the release, which builds and pushes the multi-arch image. The registry is ghcr, so
+publishing authenticates with the workflow's own token and no long-lived registry secret
+exists anywhere in this repository.
 
 ## Licence
 

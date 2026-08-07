@@ -10,10 +10,9 @@ from __future__ import annotations
 import json
 
 import pytest
-
-from app import history, main, parsing, scanner
 from conftest import DEMO, WORKSPACE
 
+from app import history, main, parsing, scanner
 
 # --------------------------------------------------------------------------
 # parsing

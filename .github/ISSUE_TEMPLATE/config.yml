@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/andrewkomkov/specdash/security/advisories/new
+    about: Please report anything exploitable privately rather than in an issue.
+  - name: Question about spec-kit itself
+    url: https://github.com/github/spec-kit
+    about: SpecDash only reads what spec-kit writes.
