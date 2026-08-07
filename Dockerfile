@@ -1,5 +1,5 @@
 # ---------- stage 1: build the frontend ----------
-FROM node:22-alpine AS web
+FROM node:25-alpine AS web
 
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json* ./
