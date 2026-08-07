@@ -10,6 +10,8 @@
 [![Coverage](https://img.shields.io/badge/backend%20coverage-100%25-brightgreen)](backend/pytest.ini)
 [![Licence](https://img.shields.io/github/license/andrewkomkov/specdash?color=blue)](LICENSE)
 
+**[specdash on the web →](https://andrewkomkov.github.io/specdash/)**
+
 Point it at the directory where you keep your repositories. It finds every spec-kit project
 underneath, lays each feature out across the six stages of the pipeline, and follows the
 files as your agent writes them. It never writes back.
