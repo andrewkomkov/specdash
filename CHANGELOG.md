@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/andrewkomkov/specdash/compare/v0.3.1...v0.4.0) (2026-08-07)
+
+
+### Features
+
+* make the header total count the cards on screen ([f3a5c80](https://github.com/andrewkomkov/specdash/commit/f3a5c806251d77a4234f6fd5d6f389b29e4b1fea))
+
 ## [0.3.1](https://github.com/andrewkomkov/specdash/compare/v0.3.0...v0.3.1) (2026-08-07)
 
 
