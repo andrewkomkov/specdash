@@ -14,6 +14,18 @@ updates:
     groups:
       mantine: { patterns: ["@mantine/*"] }
       react: { patterns: ["react", "react-dom", "@types/react", "@types/react-dom"] }
+      # vite and its react plugin peer-depend on each other, so a major in either
+      # one alone cannot install: each pull request fails at `npm ci` against the
+      # version of the other still on main. They have to arrive together.
+      vite: { patterns: ["vite", "@vitejs/*"] }
+    ignore:
+      # typescript-eslint refuses to load under TS 7.0 -- it throws on import, so
+      # this is not a warning to work around. Support is tracked for TS >= 7.1 in
+      # typescript-eslint#10940, and 7.1 is deliberately left un-ignored so the
+      # bump comes back on its own once it can pass. The source itself already
+      # typechecks clean under 7.0; lint is the only thing holding it.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0 <7.1.0"]
 
   - package-ecosystem: npm
     directory: /e2e
