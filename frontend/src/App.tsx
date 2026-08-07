@@ -176,7 +176,7 @@ export default function App() {
               id="specdash-search"
               size="xs"
               w={260}
-              placeholder="Поиск по фичам и задачам   /"
+              placeholder="Поиск по фичам, историям и задачам   /"
               leftSection={<IconSearch size={14} />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
