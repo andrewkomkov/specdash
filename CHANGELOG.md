@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/andrewkomkov/specdash/compare/v0.3.0...v0.3.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* say the search covers stories, now that it does ([967307a](https://github.com/andrewkomkov/specdash/commit/967307a226acd419fc14c59ada49b8f96e35a485))
+
+
+### Documentation
+
+* specify the story-grain board, after the fact ([bd85384](https://github.com/andrewkomkov/specdash/commit/bd85384f2e86d02f98830a29e354fe99a93b368e))
+
 ## [0.3.0](https://github.com/andrewkomkov/specdash/compare/v0.2.0...v0.3.0) (2026-08-07)
 
 
