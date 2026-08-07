@@ -470,6 +470,11 @@ function TasksPanel({ feature }: { feature: Feature }) {
                       <Checkbox
                         checked={task.done}
                         readOnly
+                        // `readonly` does nothing to a checkbox -- the HTML spec does not
+                        // apply it to this input type, and Mantine 9 no longer forwards it
+                        // to the DOM at all. This is the marker that is real for a checkbox,
+                        // and the one assistive technology reports.
+                        aria-readonly
                         size="xs"
                         mt={2}
                         color="teal"
@@ -551,7 +556,7 @@ function ChecklistsPanel({ feature }: { feature: Feature }) {
               <Stack gap={3}>
                 {list.items.map((item, i) => (
                   <Group key={i} gap={8} wrap="nowrap" align="flex-start">
-                    <Checkbox checked={item.done} readOnly size="xs" mt={2} color="teal" />
+                    <Checkbox checked={item.done} readOnly aria-readonly size="xs" mt={2} color="teal" />
                     <Text size="sm" c={item.done ? 'dimmed' : undefined} lh={1.45}>
                       {item.text}
                     </Text>

@@ -34,23 +34,44 @@ test.describe('the drawer reads a feature end to end', () => {
     await expect(drawer.getByText('T005', { exact: true })).toBeVisible()
   })
 
-  test('every checkbox in the drawer is read-only', async ({ page }) => {
-    await gotoBoard(page)
-    await column(page, 'implement')
-      .getByTestId('feature-card')
-      .filter({ hasText: 'Map the catalogue' })
-      .click()
+  /**
+   * The constitution's first principle: the board has no write affordances, and a
+   * control that looks editable and silently does nothing is worse than no control.
+   *
+   * This used to assert `readOnly` on the input, which proved nothing -- the HTML
+   * spec does not apply `readonly` to checkboxes and browsers ignore it there, so
+   * the property was inert whether or not anything was editable. What holds these
+   * boxes still is that they are controlled with no writable source behind them.
+   * So assert that: the marker that is real for a checkbox, and then the guarantee
+   * itself, by clicking one.
+   */
+  for (const tab of ['Tasks', 'Checklists'] as const) {
+    test(`every checkbox in the ${tab} tab is read-only`, async ({ page }) => {
+      await gotoBoard(page)
+      await column(page, 'implement')
+        .getByTestId('feature-card')
+        .filter({ hasText: 'Map the catalogue' })
+        .click()
 
-    const drawer = page.getByRole('dialog')
-    await drawer.getByRole('tab', { name: 'Tasks' }).click()
+      const drawer = page.getByRole('dialog')
+      await drawer.getByRole('tab', { name: tab }).click()
 
-    const boxes = drawer.getByRole('checkbox')
-    const count = await boxes.count()
-    expect(count).toBeGreaterThan(0)
-    for (let i = 0; i < count; i += 1) {
-      await expect(boxes.nth(i)).toHaveJSProperty('readOnly', true)
-    }
-  })
+      const boxes = drawer.getByRole('checkbox')
+      const count = await boxes.count()
+      expect(count).toBeGreaterThan(0)
+      for (let i = 0; i < count; i += 1) {
+        await expect(boxes.nth(i)).toHaveAttribute('aria-readonly', 'true')
+      }
+
+      // Clicking is the part that matters, and no previous version of this test
+      // did it. `force` because a real user's click lands on the box whether or
+      // not the framework wants to receive it.
+      const box = boxes.first()
+      const before = await box.isChecked()
+      await box.click({ force: true })
+      await expect(box).toHaveJSProperty('checked', before)
+    })
+  }
 
   test('checklists and documents render from the files', async ({ page }) => {
     await gotoBoard(page)
