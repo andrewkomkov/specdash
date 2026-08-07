@@ -95,6 +95,23 @@ def test_a_feature_whose_every_task_names_a_story_carries_no_leftover_bucket():
     _ = phases
 
 
+def test_every_feature_accounts_for_all_its_tasks_at_story_grain(demo_project):
+    """The identity the header total leans on: with no filter, summing the story
+    cards and summing the feature cards give the same answer. If that stops
+    holding, the leftover bucket has quietly stopped accounting for something —
+    and it breaks here, not as an unexplainable number in a corner of the UI."""
+    for feature in demo_project.features:
+        counted = sum(s.total for s in feature.user_stories)
+        if feature.unassigned:
+            counted += feature.unassigned.total
+        assert counted == feature.progress.total, feature.id
+
+        closed = sum(s.done for s in feature.user_stories)
+        if feature.unassigned:
+            closed += feature.unassigned.done
+        assert closed == feature.progress.done, feature.id
+
+
 def _checksum(root: Path) -> list[tuple[str, int, str]]:
     """Every path under `root`, with size and content digest."""
     out: list[tuple[str, int, str]] = []
