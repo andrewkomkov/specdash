@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/andrewkomkov/specdash/compare/v0.5.0...v0.6.0) (2026-08-07)
+
+
+### Features
+
+* search the documents, not just the cards ([133cd6d](https://github.com/andrewkomkov/specdash/commit/133cd6d391f1a8c6e8ee28f2648e41b6bbcee675))
+
+
+### Bug Fixes
+
+* point the lint directive at the code it excuses ([4f1d578](https://github.com/andrewkomkov/specdash/commit/4f1d578648ee3f57e8c30e7ea3f262fe970b0a2b))
+
 ## [0.5.0](https://github.com/andrewkomkov/specdash/compare/v0.4.1...v0.5.0) (2026-08-07)
 
 
