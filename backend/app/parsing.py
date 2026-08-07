@@ -57,26 +57,39 @@ class Section:
         return "\n".join(self.lines)
 
     def paragraphs(self) -> list[str]:
-        """Body paragraphs with wrapped lines joined back together."""
+        """Body prose, wrapped lines joined and emphasis flattened.
+
+        `**Acceptance Scenarios**:` and its siblings are metadata, not prose: a
+        story with no narrative would otherwise take one as its summary and print
+        the asterisks on the card. Everything else on screen goes through
+        `clean_inline`; paragraphs did not, which is why summaries carried raw
+        `**bold**` markers into the UI.
+        """
         out: list[str] = []
         buf: list[str] = []
+
+        def flush() -> None:
+            nonlocal buf
+            if buf:
+                text = clean_inline(" ".join(buf))
+                if text:
+                    out.append(text)
+                buf = []
+
         for raw in self.lines:
             line = raw.rstrip()
             if not line.strip():
-                if buf:
-                    out.append(" ".join(buf))
-                    buf = []
+                flush()
                 continue
-            if line.lstrip().startswith(("- ", "* ", "|", ">", "#")) or re.match(
-                r"^\s*\d+\.\s", line
+            if (
+                line.lstrip().startswith(("- ", "* ", "|", ">", "#"))
+                or re.match(r"^\s*\d+\.\s", line)
+                or BOLD_FIELD_RE.match(line.strip())
             ):
-                if buf:
-                    out.append(" ".join(buf))
-                    buf = []
+                flush()
                 continue
             buf.append(line.strip())
-        if buf:
-            out.append(" ".join(buf))
+        flush()
         return out
 
     def field(self, name: str) -> str | None:

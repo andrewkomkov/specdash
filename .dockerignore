@@ -1,5 +1,6 @@
 **/node_modules
 backend/tests
+e2e
 **/dist
 **/__pycache__
 **/*.pyc

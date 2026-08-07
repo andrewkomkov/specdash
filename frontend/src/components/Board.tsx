@@ -100,7 +100,7 @@ function Column({
   const color = STAGE_COLOR[stage]
 
   return (
-    <Box className={classes.column} data-stage={stage}>
+    <Box className={classes.column} data-stage={stage} data-testid={`column-${stage}`}>
       <Box className={classes.header}>
         <Group justify="space-between" wrap="nowrap" gap={6}>
           <Group gap={7} wrap="nowrap">

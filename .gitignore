@@ -8,3 +8,12 @@ __pycache__/
 
 # a build artefact, regenerated on every `npm run build`
 frontend/tsconfig.tsbuildinfo
+
+# coverage artefacts
+.coverage
+htmlcov/
+
+# playwright: the fixture copy and its reports
+e2e/.tmp/
+e2e/test-results/
+e2e/playwright-report/

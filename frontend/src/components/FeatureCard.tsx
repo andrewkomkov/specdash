@@ -53,6 +53,8 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
       className={`${classes.card} ${flashing ? classes.flash : ''}`}
       onClick={() => onOpen(feature)}
       data-current={feature.is_current || undefined}
+      data-testid="feature-card"
+      data-feature={`${feature.project_id}/${feature.id}`}
     >
       <Box className={classes.accent} style={{ background: `var(--mantine-color-${accent}-6)` }} />
 

@@ -25,6 +25,10 @@ log = logging.getLogger("specdash")
 
 WATCH_SUFFIXES = (".md", ".json", ".yaml", ".yml", ".txt")
 
+# Above this, a document is refused rather than shipped to the browser: the point
+# is to read a spec, and nothing spec-kit writes is anywhere near this big.
+MAX_DOC_BYTES = 2_000_000
+
 
 class Hub:
     """Fan-out of snapshots to every connected browser."""
@@ -212,7 +216,7 @@ async def feature_doc(project_id: str, feature_id: str, file: str) -> PlainTextR
     if not any(f.id == feature_id for f in project.features):
         raise HTTPException(404, f"unknown feature {feature_id!r}")
     path = _safe_path(project.path, f"specs/{feature_id}/{file}")
-    if path.stat().st_size > 2_000_000:
+    if path.stat().st_size > MAX_DOC_BYTES:
         raise HTTPException(413, "document too large to display")
     return PlainTextResponse(path.read_text(encoding="utf-8", errors="replace"))
 
