@@ -27,7 +27,8 @@ import {
   IconSun,
 } from '@tabler/icons-react'
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
-import { Board } from './components/Board'
+import { Board, StoryBoard } from './components/Board'
+import type { StoryRow } from './components/StoryCard'
 import type { Feature } from './types'
 import { useSnapshot } from './useSnapshot'
 import { projectColor, relativeTime } from './utils'
@@ -45,12 +46,22 @@ export default function App() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const [query, setQuery] = useState('')
   const [debounced] = useDebouncedValue(query, 150)
-  const [view, setView] = useState<'board' | 'trend'>('board')
+  // Persisted: which grain the board is read at is a working preference, not a
+  // per-visit choice — whole features when many projects are open, stories when
+  // the board would otherwise hold a handful of cards.
+  const [view, setView] = useLocalStorage<'features' | 'stories' | 'trend'>({
+    key: 'specdash-view',
+    defaultValue: 'features',
+  })
   const [hidden, setHidden] = useLocalStorage<string[]>({
     key: 'specdash-hidden-projects',
     defaultValue: [],
   })
-  const [selected, setSelected] = useState<{ project: string; feature: string } | null>(null)
+  const [selected, setSelected] = useState<{
+    project: string
+    feature: string
+    story?: string
+  } | null>(null)
 
   const projects = snapshot?.projects ?? []
   const visibleProjects = projects.filter((p) => !hidden.includes(p.id))
@@ -68,6 +79,26 @@ export default function App() {
           f.tasks.some((t) => t.description.toLowerCase().includes(needle))
         )
       })
+  }, [visibleProjects, debounced])
+
+  // One row per user story, plus the setup/foundational/polish tasks that belong
+  // to no story — dropping those would make the column totals stop adding up.
+  const storyRows: StoryRow[] = useMemo(() => {
+    const needle = debounced.trim().toLowerCase()
+    const rows: StoryRow[] = []
+    for (const project of visibleProjects) {
+      for (const feature of project.features) {
+        const featureMatches =
+          !needle ||
+          feature.title.toLowerCase().includes(needle) ||
+          feature.id.toLowerCase().includes(needle)
+        for (const story of [...feature.user_stories, ...(feature.unassigned ? [feature.unassigned] : [])]) {
+          if (!featureMatches && !story.title.toLowerCase().includes(needle)) continue
+          rows.push({ key: `${project.id}/${feature.id}/${story.id}`, story, feature })
+        }
+      }
+    }
+    return rows
   }, [visibleProjects, debounced])
 
   // Keep the open drawer bound to the live snapshot, not to a stale copy.
@@ -134,9 +165,10 @@ export default function App() {
             <SegmentedControl
               size="xs"
               value={view}
-              onChange={(v) => setView(v as 'board' | 'trend')}
+              onChange={(v) => setView(v as 'features' | 'stories' | 'trend')}
               data={[
-                { value: 'board', label: 'Доска' },
+                { value: 'features', label: 'Фичи' },
+                { value: 'stories', label: 'Истории' },
                 { value: 'trend', label: 'Динамика' },
               ]}
             />
@@ -211,7 +243,7 @@ export default function App() {
               </Group>
             )}
             <Badge variant="default" radius="sm" size="sm">
-              {features.length} фич
+              {view === 'stories' ? `${storyRows.length} историй` : `${features.length} фич`}
             </Badge>
             {snapshot && (
               <Tooltip label={reason || 'последний скан'} withArrow>
@@ -261,12 +293,25 @@ export default function App() {
                 </Alert>
               </Box>
             )}
-            {view === 'board' ? (
+            {view === 'features' ? (
               <Board
                 features={features}
                 showProject={visibleProjects.length > 1}
                 recent={recent}
                 onOpen={(f) => setSelected({ project: f.project_id, feature: f.id })}
+              />
+            ) : view === 'stories' ? (
+              <StoryBoard
+                rows={storyRows}
+                showProject={visibleProjects.length > 1}
+                recent={recent}
+                onOpen={(row) =>
+                  setSelected({
+                    project: row.feature.project_id,
+                    feature: row.feature.id,
+                    story: row.story.id,
+                  })
+                }
               />
             ) : (
               <Suspense fallback={<Loader size="sm" m="lg" />}>
@@ -278,7 +323,11 @@ export default function App() {
       </AppShell.Main>
 
       <Suspense fallback={null}>
-        <FeatureDrawer feature={openFeature} onClose={() => setSelected(null)} />
+        <FeatureDrawer
+          feature={openFeature}
+          focusStory={selected?.story ?? null}
+          onClose={() => setSelected(null)}
+        />
       </Suspense>
     </AppShell>
   )

@@ -23,6 +23,7 @@ from .models import (
     Project,
     Snapshot,
     Stage,
+    UserStory,
 )
 
 log = logging.getLogger("specdash.scanner")
@@ -112,6 +113,28 @@ def _decide_stage(
     if has_spec:
         return "specify", "spec.md only"
     return "specify", "no spec.md found"
+
+
+def _story_stage(
+    done: int, total: int, feature: tuple[Stage, str], *, feature_has_tasks: bool
+) -> tuple[Stage, str]:
+    """Where one user story sits, on the same evidence rule as a whole feature.
+
+    A story with tasks of its own is placed by its own tick counts. A story with
+    none has not been cut into work, so it sits wherever its feature sits — and
+    says which of the two reasons applies, rather than implying progress it has
+    no evidence for.
+    """
+    if total:
+        if done == total:
+            return "done", f"all {total} tasks ticked"
+        if done:
+            return "implement", f"{done}/{total} tasks ticked"
+        return "tasks", f"{total} tasks, none started"
+    stage, reason = feature
+    if feature_has_tasks:
+        return stage, "no task in tasks.md names this story"
+    return stage, reason
 
 
 def feature_commits(project_path: Path, rel_dir: str, limit: int = 10) -> list[Commit]:
@@ -242,6 +265,30 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
         open_questions=len(spec.open_questions),
     )
 
+    for story in spec.user_stories:
+        story.stage, story.stage_reason = _story_stage(
+            story.done, story.total, (stage, reason), feature_has_tasks="tasks" in texts
+        )
+
+    # Setup, foundational and polish work belongs to no story. On a board of
+    # stories it would simply vanish, and the column totals would stop adding up.
+    loose = [t for t in tasks if not t.story]
+    unassigned = None
+    if loose:
+        loose_done = sum(1 for t in loose if t.done)
+        loose_stage, loose_reason = _story_stage(
+            loose_done, len(loose), (stage, reason), feature_has_tasks=True
+        )
+        unassigned = UserStory(
+            id="—",
+            number=0,
+            title="Tasks with no story",
+            done=loose_done,
+            total=len(loose),
+            stage=loose_stage,
+            stage_reason=loose_reason,
+        )
+
     title = spec.title or slug.replace("-", " ").title()
 
     return Feature(
@@ -262,6 +309,7 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
         checklist_progress=checklist_progress,
         artifacts=artifacts,
         user_stories=spec.user_stories,
+        unassigned=unassigned,
         phases=phases,
         tasks=tasks,
         checklists=checklists,

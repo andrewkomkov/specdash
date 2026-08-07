@@ -65,6 +65,11 @@ class UserStory(BaseModel):
     done: int = 0
     total: int = 0
 
+    # Where this story sits on its own evidence, so the board can lay stories out
+    # by stage rather than only whole features.
+    stage: Stage = "specify"
+    stage_reason: str = ""
+
 
 class Requirement(BaseModel):
     id: str  # FR-001 / SC-001 / NFR-002
@@ -179,6 +184,9 @@ class Feature(BaseModel):
 
     artifacts: list[Artifact] = Field(default_factory=list)
     user_stories: list[UserStory] = Field(default_factory=list)
+    # Setup, foundational and polish tasks belong to no story; carried separately
+    # so a board of stories can show them rather than losing them.
+    unassigned: UserStory | None = None
     phases: list[Phase] = Field(default_factory=list)
     tasks: list[Task] = Field(default_factory=list)
     checklists: list[Checklist] = Field(default_factory=list)

@@ -48,6 +48,13 @@ folder.
 **It updates itself.** Run `/speckit-tasks` in one window with the board open in another:
 progress moves, cards change column, and whatever just changed pulses.
 
+**Read the board at two grains.** *Фичи* is one card per feature — the right density when
+several projects are open at once. *Истории* is one card per user story, each placed by its
+own ticked tasks rather than by its feature's, which is what you want when a handful of
+features would otherwise leave the columns nearly empty. Setup, foundational and polish
+tasks name no story, so they get a card of their own — without it the column totals would
+quietly stop adding up. The choice is remembered between visits.
+
 **Switch to Динамика** for movement rather than position: task completion per commit for
 each project, read straight out of `git log` — no database, nothing stored. The dashed line
 is the total, because work being added is half the story and a chart of percentages alone
