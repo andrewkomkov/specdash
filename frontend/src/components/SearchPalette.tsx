@@ -207,9 +207,11 @@ export function SearchPalette({ opened, onClose, onOpen, generation }: Props) {
  * payload is never markup and this never has to trust it.
  */
 function Snippet({ text }: { text: string }) {
-  // eslint-disable-next-line no-control-regex -- deliberate: the server marks
-  // matches with control characters exactly so the payload can never be markup,
-  // which is what makes rendering it without sanitising safe.
+  // Deliberate: the server marks matches with control characters exactly so the
+  // payload can never be markup, which is what makes rendering it safe without
+  // sanitising. The directive has to sit on the line above the code, not above a
+  // comment, or it silently covers nothing.
+  // eslint-disable-next-line no-control-regex
   const pieces = text.split(/\x02|\x03/)
   return (
     <Text size="xs" c="dimmed" lineClamp={2} mt={2} className={classes.snippet}>
