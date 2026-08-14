@@ -58,9 +58,11 @@ jobs:
           # history, not the single commit a default checkout provides.
           fetch-depth: 0
 
+      # Tests run on the version the image ships, so keep this in step with the
+      # runtime stage of the Dockerfile rather than pinning it independently.
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
@@ -133,7 +135,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: pip
           cache-dependency-path: backend/requirements.txt
 
