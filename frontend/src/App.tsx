@@ -251,10 +251,29 @@ export default function App() {
                   key={project.id}
                   withArrow
                   multiline
-                  w={project.error ? 340 : undefined}
-                  label={`${project.path}${project.branch ? ` · ${project.branch}` : ''}${
-                    project.constitution_version ? ` · constitution ${project.constitution_version}` : ''
-                  }${project.error ? `\n⚠ ${project.error}` : ''}`}
+                  w={340}
+                  // Toolchain and declared process are properties of the
+                  // project, so they belong here rather than behind a feature:
+                  // "which of these is on an old spec-kit" is a portfolio
+                  // question, and the portfolio question comes first.
+                  label={[
+                    project.path,
+                    project.branch,
+                    project.constitution_version && `constitution ${project.constitution_version}`,
+                    project.toolchain?.speckit_version &&
+                      t('project.toolchain', { version: project.toolchain.speckit_version }) +
+                        (project.toolchain.integration ? ` · ${project.toolchain.integration}` : ''),
+                    project.toolchain?.drift
+                      ? `⚠ ${t('project.drift', { count: project.toolchain.drift })}`
+                      : null,
+                    project.workflows.length
+                      ? t('project.workflows', { count: project.workflows.length }) +
+                        `: ${project.workflows.map((w) => w.name ?? w.id).join(', ')}`
+                      : null,
+                    project.error && `⚠ ${project.error}`,
+                  ]
+                    .filter(Boolean)
+                    .join('\n')}
                 >
                   <Chip
                     size="xs"

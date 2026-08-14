@@ -14,6 +14,9 @@ from .models import (
     AcceptanceScenario,
     Checklist,
     ChecklistItem,
+    ComplexityRow,
+    ConstitutionResult,
+    Entity,
     Phase,
     Requirement,
     Task,
@@ -31,8 +34,24 @@ NEEDS_CLARIFICATION_RE = re.compile(r"\[NEEDS CLARIFICATION:?\s*([^\]]*)\]", re.
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.S)
 
 
+FENCED_RE = re.compile(r"^```.*?^```", re.M | re.S)
+INLINE_SPAN_RE = re.compile(r"`[^`\n]*`")
+
+
 def strip_frontmatter(text: str) -> str:
     return FRONTMATTER_RE.sub("", text, count=1)
+
+
+def strip_code(text: str) -> str:
+    """Drop fenced blocks and inline spans.
+
+    A document that *discusses* a marker is not a document that *carries* one:
+    a spec explaining what `[NEEDS CLARIFICATION]` means would otherwise report
+    itself as having two open questions, and — because open questions place a
+    feature — be held in Specify by its own prose. Code formatting is the only
+    signal in markdown that separates mention from use, so it is the one used.
+    """
+    return INLINE_SPAN_RE.sub(" ", FENCED_RE.sub(" ", text))
 
 
 def clean_inline(text: str) -> str:
@@ -43,6 +62,17 @@ def clean_inline(text: str) -> str:
     text = re.sub(r"(?<!\w)\*(?!\s)(.+?)(?<!\s)\*(?!\w)", r"\1", text)
     text = text.replace("`", "")
     return re.sub(r"\s+", " ", text).strip()
+
+
+def is_placeholder(text: str) -> bool:
+    """Template text nobody replaced: `[Entity 1]`, `[e.g., 4th project]`.
+
+    spec-kit writes its prompts inside square brackets, so a value that still
+    opens with one was never filled in. Reading it as content is how a board
+    ends up asserting that a project has an entity called "Entity 1".
+    """
+    stripped = text.strip()
+    return stripped.startswith("[") and "]" in stripped
 
 
 @dataclass
@@ -209,6 +239,24 @@ SKIP_TASK_SECTIONS = (
 )
 
 
+def _fold_wrapped(lines: list[str], start: int, body: str) -> str:
+    """A checkbox line plus its indented continuation lines, as one string.
+
+    A continuation is an indented, non-empty line that starts neither a new
+    checkbox nor a heading, table or list — the same shape the other folders
+    here accept.
+    """
+    parts = [body]
+    for raw in lines[start + 1 :]:
+        stripped = raw.strip()
+        if not stripped or raw[:1] not in (" ", "\t"):
+            break
+        if CHECKBOX_RE.match(raw) or stripped.startswith(("#", "|", "- ", "* ", ">")):
+            break
+        parts.append(stripped)
+    return " ".join(parts)
+
+
 def _phase_kind(title: str) -> str:
     low = title.lower()
     if STORY_IN_TITLE_RE.search(low):
@@ -256,7 +304,13 @@ def parse_tasks(text: str) -> tuple[list[Phase], list[Task]]:
             if not m:
                 continue
             done = m.group(1).lower() in ("x", "~")
-            body = m.group(2).strip()
+            # Task text wraps constantly in real task lists, and reading only the
+            # first physical line truncated it mid-sentence: the drawer showed
+            # half a task ending in a comma, search never saw the remainder, and
+            # any rule reading task text was reading half of it. Folded the same
+            # way `Section.bullets` and `Section.field` already fold theirs.
+            folded = _fold_wrapped(section.lines, offset, m.group(2).strip())
+            body = folded
             idm = TASK_ID_RE.match(body)
             task_id = idm.group(1) if idm else None
             if idm:
@@ -284,7 +338,7 @@ def parse_tasks(text: str) -> tuple[list[Phase], list[Task]]:
                 phase=phase.title,
                 phase_index=phase.index,
                 line=section.start + offset + 1,
-                files=extract_files(m.group(2)),
+                files=extract_files(folded),
             )
             if task_id:
                 tasks.append(task)
@@ -354,6 +408,10 @@ class SpecInfo:
     edge_cases: list[str] = field(default_factory=list)
     clarifications: list[str] = field(default_factory=list)
     open_questions: list[str] = field(default_factory=list)
+    entities: list[Entity] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    duplicate_requirements: list[str] = field(default_factory=list)
 
 
 def _ordered_items(section: Section) -> list[str]:
@@ -456,11 +514,19 @@ def parse_spec(text: str) -> SpecInfo:
         # keep the first occurrence of each id.
         seen = {r.id for r in target}
         for sub in [s, *subsections(sections, s)]:
+            # Repeats *across* sections are the parser seeing one bullet twice;
+            # a repeat inside one section is the document itself declaring an id
+            # twice. Only the second is worth reporting, so the two are counted
+            # separately rather than folded into one set.
+            local: set[str] = set()
             for bullet in sub.bullets():
                 rm = REQUIREMENT_RE.match(bullet)
                 if not rm:
                     continue
                 req_id = requirement_id(rm.group(1))
+                if req_id in local and req_id not in info.duplicate_requirements:
+                    info.duplicate_requirements.append(req_id)
+                local.add(req_id)
                 if req_id in seen:
                     continue
                 seen.add(req_id)
@@ -477,8 +543,25 @@ def parse_spec(text: str) -> SpecInfo:
             items.extend(sub.bullets())
         info.clarifications = [i for i in items if i]
 
+    entities = find_section(sections, "key entities", "entities")
+    if entities:
+        for bullet in entities.bullets():
+            if is_placeholder(bullet):
+                continue
+            name, _, rest = bullet.partition(":")
+            info.entities.append(Entity(name=name.strip(), text=rest.strip()))
+
+    for name, target_list in (
+        ("assumption", info.assumptions),
+        ("dependenc", info.dependencies),
+    ):
+        section = find_section(sections, name)
+        if section:
+            target_list.extend(b for b in section.bullets() if not is_placeholder(b))
+
     info.open_questions = [
-        clean_inline(q) or "unspecified" for q in NEEDS_CLARIFICATION_RE.findall(text)
+        clean_inline(q) or "unspecified"
+        for q in NEEDS_CLARIFICATION_RE.findall(strip_code(text))
     ]
     return info
 
@@ -501,7 +584,110 @@ TECH_KEYS = (
 )
 
 
-def parse_plan(text: str) -> tuple[str | None, dict[str, str]]:
+# Uppercase, as a whole word. spec-kit's gates are written `PASS` / `FAIL`, and
+# requiring the case keeps prose like "the build fails" out of the verdict.
+VERDICT_FAIL_RE = re.compile(r"\bFAIL(?:ED|S|URE)?\b")
+VERDICT_PASS_RE = re.compile(r"\bPASS(?:ED|ES)?\b")
+UNTICKED_RE = re.compile(r"^\s*[-*]\s+\[\s\]\s+")
+TICKED_RE = re.compile(r"^\s*[-*]\s+\[[xX~]\]\s+")
+TABLE_ROW_RE = re.compile(r"^\s*\|(.+)\|\s*$")
+TABLE_RULE_RE = re.compile(r"^[\s|:-]+$")
+
+
+def _evidence(line: str) -> str:
+    """One line of a gate, readable on its own.
+
+    A constitution gate is often written as a table, and a raw row carries its
+    pipes into the drawer — `| I. Read-only | … | PASS |`. The cells say the
+    same thing without them.
+    """
+    m = TABLE_ROW_RE.match(line)
+    if not m:
+        return clean_inline(line)
+    cells = [clean_inline(c) for c in m.group(1).split("|")]
+    return " · ".join(c for c in cells if c)
+
+
+def parse_constitution_check(sections: list[Section]) -> ConstitutionResult | None:
+    """plan.md's `## Constitution Check` gate.
+
+    Returns None when the section is absent — an absence is data, and it is a
+    different fact from a section that could not be resolved.
+
+    The verdict is only ever drawn from explicit evidence, and the fallback is
+    `unknown`. An untouched template section reads as unknown, never as a pass:
+    the alternative is the board inventing a clean bill of health for a plan
+    nobody has checked, which is prose winning over artefacts by the back door.
+    """
+    section = find_section(sections, "constitution check", "constitution gate")
+    if section is None:
+        return None
+
+    result = ConstitutionResult()
+    ticked = unticked = 0
+    fail_line: str | None = None
+    pass_line: str | None = None
+
+    for raw in section.lines:
+        line = raw.strip()
+        if not line or is_placeholder(clean_inline(line)):
+            continue
+        if UNTICKED_RE.match(line):
+            unticked += 1
+            # The gate itself is the evidence; the checkbox is how it was written.
+            fail_line = fail_line or _evidence(UNTICKED_RE.sub("", line))
+            continue
+        if TICKED_RE.match(line):
+            ticked += 1
+            continue
+        if fail_line is None and VERDICT_FAIL_RE.search(line):
+            fail_line = _evidence(line)
+        elif pass_line is None and VERDICT_PASS_RE.search(line):
+            pass_line = _evidence(line)
+
+    if fail_line or unticked:
+        result.verdict = "fail"
+        result.evidence = fail_line
+    elif pass_line or ticked:
+        result.verdict = "pass"
+        result.evidence = pass_line or f"{ticked} gate(s) ticked"
+    return result
+
+
+def parse_complexity(sections: list[Section]) -> list[ComplexityRow]:
+    """`## Complexity Tracking` — the exceptions a plan declares in writing.
+
+    These are not findings. A row here is a violation its author chose, argued
+    for and recorded, which is the opposite of one nobody noticed.
+    """
+    section = find_section(sections, "complexity tracking", "complexity")
+    if section is None:
+        return []
+
+    rows: list[ComplexityRow] = []
+    for raw in section.lines:
+        m = TABLE_ROW_RE.match(raw)
+        if not m or TABLE_RULE_RE.match(m.group(1)):
+            continue
+        cells = [clean_inline(c) for c in m.group(1).split("|")]
+        if not cells[0]:
+            continue
+        # The header row, and the template's own example rows, are not data.
+        if cells[0].lower().startswith("violation"):
+            continue
+        if all(is_placeholder(c) for c in cells if c):
+            continue
+        rows.append(
+            ComplexityRow(
+                violation=cells[0],
+                why_needed=cells[1] if len(cells) > 1 and cells[1] else None,
+                alternative=cells[2] if len(cells) > 2 and cells[2] else None,
+            )
+        )
+    return rows
+
+
+def parse_plan(text: str) -> tuple[str | None, dict[str, str], ConstitutionResult | None]:
     sections = split_sections(text)
     summary = None
     for name in ("summary", "overview"):
@@ -527,7 +713,11 @@ def parse_plan(text: str) -> tuple[str | None, dict[str, str]]:
             value = ctx.field(key)
             if value and "NEEDS CLARIFICATION" not in value.upper():
                 tech[key] = value
-    return summary, tech
+
+    constitution = parse_constitution_check(sections)
+    if constitution is not None:
+        constitution.rows = parse_complexity(sections)
+    return summary, tech, constitution
 
 
 # --------------------------------------------------------------------------

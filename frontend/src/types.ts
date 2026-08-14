@@ -70,6 +70,8 @@ export interface UserStory {
   total: number
   stage: Stage
   stage_reason: string
+  /** false for a story only tasks.md knows about */
+  in_spec: boolean
 }
 
 export interface Requirement {
@@ -84,6 +86,74 @@ export interface Checklist {
   items: { text: string; done: boolean; section: string | null }[]
   done: number
   total: number
+}
+
+export type Severity = 'blocker' | 'warn' | 'info'
+
+export const SEVERITY_COLOR: Record<Severity, string> = {
+  blocker: 'red',
+  warn: 'orange',
+  info: 'gray',
+}
+
+/** One observed disagreement between two of a feature's artefacts. */
+export interface Finding {
+  code: string
+  severity: Severity
+  message: string
+  ref: string | null
+  file: string | null
+}
+
+export interface ComplexityRow {
+  violation: string
+  why_needed: string | null
+  alternative: string | null
+}
+
+export interface ConstitutionResult {
+  verdict: 'pass' | 'fail' | 'unknown'
+  evidence: string | null
+  rows: ComplexityRow[]
+}
+
+export interface Entity {
+  name: string
+  text: string
+}
+
+export interface ManifestFile {
+  path: string
+  state: 'ok' | 'modified' | 'missing' | 'unverified'
+  reason: string | null
+}
+
+export interface Toolchain {
+  speckit_version: string | null
+  integration: string | null
+  integrations: string[]
+  script: string | null
+  feature_numbering: string | null
+  files: ManifestFile[]
+  drift: number
+}
+
+export interface WorkflowStep {
+  id: string
+  kind: 'command' | 'gate'
+  command: string | null
+  message: string | null
+  on_reject: string | null
+}
+
+export interface DeclaredWorkflow {
+  id: string
+  name: string | null
+  version: string | null
+  description: string | null
+  source: string | null
+  steps: WorkflowStep[]
+  error: string | null
 }
 
 export interface Artifact {
@@ -133,6 +203,13 @@ export interface Feature {
   clarifications: string[]
   tech: Record<string, string>
   open_questions: string[]
+  entities: Entity[]
+  assumptions: string[]
+  dependencies: string[]
+  duplicate_requirements: string[]
+  /** null when plan.md has no constitution section at all */
+  constitution: ConstitutionResult | null
+  findings: Finding[]
   modified: number
   commits: Commit[]
 }
@@ -147,6 +224,9 @@ export interface Project {
   current_feature: string | null
   branch: string | null
   features: Feature[]
+  /** null when spec-kit left none of its own bookkeeping in the project */
+  toolchain: Toolchain | null
+  workflows: DeclaredWorkflow[]
   modified: number
   error: string | null
 }
