@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.7.0](https://github.com/andrewkomkov/specdash/compare/v0.6.2...v0.7.0) (2026-08-14)
+
+
+### Features
+
+* **scanner:** read the rest of spec-kit ([#51](https://github.com/andrewkomkov/specdash/issues/51)) ([fe208cc](https://github.com/andrewkomkov/specdash/commit/fe208ccf2f6613749a3990c4bf27e874bfebead0))
+* **ui:** one system of colour ([#52](https://github.com/andrewkomkov/specdash/issues/52)) ([2f27a2c](https://github.com/andrewkomkov/specdash/commit/2f27a2c3304b87cad9da5e528d70bd5c1f2afc06))
+
+
+### Bug Fixes
+
+* **history:** order the trend series by date, not by log order ([#53](https://github.com/andrewkomkov/specdash/issues/53)) ([3bbd5d4](https://github.com/andrewkomkov/specdash/commit/3bbd5d4c52798b6aee3d90d16387741623c25571))
+
+
+### Build
+
+* bump eslint from 10.8.0 to 10.8.1 in /frontend ([#45](https://github.com/andrewkomkov/specdash/issues/45)) ([8a15c91](https://github.com/andrewkomkov/specdash/commit/8a15c913837ec005d5ce623396f500f573cf5df8))
+* bump eslint-plugin-react-refresh from 0.5.3 to 0.5.4 in /frontend ([#47](https://github.com/andrewkomkov/specdash/issues/47)) ([d030b49](https://github.com/andrewkomkov/specdash/commit/d030b491d33306b25c9cee836ba27ff070fa269e))
+* bump node from 25-alpine to 26-alpine ([#40](https://github.com/andrewkomkov/specdash/issues/40)) ([0db6966](https://github.com/andrewkomkov/specdash/commit/0db69661948b47d1fef65b3b99c79c8539a538cb))
+* bump pytest from 8.3.4 to 9.1.1 in /backend ([#46](https://github.com/andrewkomkov/specdash/issues/46)) ([508a5f3](https://github.com/andrewkomkov/specdash/commit/508a5f3932bfca4656279f6fa4bd816f6d996ffc))
+* bump python from 3.13-slim to 3.14-slim ([#41](https://github.com/andrewkomkov/specdash/issues/41)) ([bebcb49](https://github.com/andrewkomkov/specdash/commit/bebcb49c2b019e8a5ab34540e96e124fbe068a8a))
+* bump ruff from 0.16.1 to 0.16.2 in /backend ([#48](https://github.com/andrewkomkov/specdash/issues/48)) ([6e7b0fc](https://github.com/andrewkomkov/specdash/commit/6e7b0fcf95fd60e58c8186f0f2dd9365f5a24f27))
+* bump typescript-eslint from 8.66.0 to 8.67.0 in /frontend ([#49](https://github.com/andrewkomkov/specdash/issues/49)) ([d42e0f3](https://github.com/andrewkomkov/specdash/commit/d42e0f35cac2c807328e7d451e70a51e1b6a4fb7))
+* bump uvicorn from 0.34.0 to 0.52.1 in /backend ([#44](https://github.com/andrewkomkov/specdash/issues/44)) ([f60cce5](https://github.com/andrewkomkov/specdash/commit/f60cce5f93068ff0c63700375a63e2d325485cef))
+
 ## [0.6.2](https://github.com/andrewkomkov/specdash/compare/v0.6.1...v0.6.2) (2026-08-07)
 
 
