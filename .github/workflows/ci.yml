@@ -58,7 +58,7 @@ jobs:
           # history, not the single commit a default checkout provides.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -131,7 +131,7 @@ jobs:
             frontend/package-lock.json
             e2e/package-lock.json
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
