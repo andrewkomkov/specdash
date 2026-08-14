@@ -1,8 +1,8 @@
 import { Badge, Box, Card, Group, Progress, Text, Tooltip } from '@mantine/core'
 import type { Feature, UserStory } from '../types'
-import { PRIORITY_COLOR } from '../types'
+import { PRIORITY_WEIGHT, STAGE_VAR } from '../types'
 import { useT } from '../i18n'
-import { progressColor, projectColor } from '../utils'
+import { PROGRESS_COLOR } from '../utils'
 import classes from './FeatureCard.module.css'
 
 export interface StoryRow {
@@ -22,7 +22,6 @@ interface Props {
 export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
   const { t } = useT()
   const { story, feature } = row
-  const accent = projectColor(feature.project_id)
   const pct = story.total ? Math.round((100 * story.done) / story.total) : 0
   const loose = story.id === '—'
 
@@ -46,28 +45,34 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
         }
       }}
     >
-      <Box className={classes.accent} style={{ background: `var(--mantine-color-${accent}-6)` }} />
+      <Box className={classes.accent} style={{ background: STAGE_VAR[story.stage] }} />
 
       <Group gap={5} wrap="nowrap" mb={5} justify="space-between">
         <Group gap={5} wrap="nowrap" style={{ minWidth: 0 }}>
           <Badge
             size="xs"
             radius="sm"
-            variant="light"
-            color={loose ? 'gray' : (PRIORITY_COLOR[story.priority ?? ''] ?? 'gray')}
+            variant="default"
+            fw={loose ? 500 : (PRIORITY_WEIGHT[story.priority ?? ''] ?? 500)}
             className={`${classes.pill} ${classes.storyBadge}`}
           >
             {story.id}
             {story.priority ? ` · ${story.priority}` : ''}
           </Badge>
           {showProject && (
-            <Badge size="xs" radius="sm" variant="dot" color={accent} className={classes.pill}>
+            <Badge size="xs" radius="sm" variant="default" className={classes.pill}>
               {feature.project_id}
             </Badge>
           )}
         </Group>
         {feature.is_current && (
-          <Badge size="xs" radius="sm" variant="light" color="orange" className={classes.pill}>
+          <Badge
+            size="xs"
+            radius="sm"
+            variant="outline"
+            color={PROGRESS_COLOR}
+            className={classes.pill}
+          >
             current
           </Badge>
         )}
@@ -80,7 +85,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
       {/* Which feature this story belongs to — a story title alone is not enough
           to place it when several projects are on the board at once. */}
       <Tooltip label={feature.title} withArrow multiline w={280} openDelay={400}>
-        <Text size="10px" c="dimmed" mt={3} lineClamp={1}>
+        <Text size="xs" c="dimmed" mt={3} lineClamp={1}>
           {feature.number ? `${feature.number} · ` : ''}
           {feature.title}
         </Text>
@@ -89,23 +94,23 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
       {story.total > 0 ? (
         <Box mt={8}>
           <Group justify="space-between" gap={6} mb={3} wrap="nowrap">
-            <Text size="10px" c="dimmed" tt="uppercase" fw={700}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
               {t('card.tasks')}
             </Text>
-            <Text size="10px" fw={700} className={classes.footerMeta}>
+            <Text size="xs" fw={700} className={classes.footerMeta}>
               {story.done}/{story.total}
             </Text>
           </Group>
-          <Progress value={pct} color={progressColor(pct)} size="sm" radius="xl" />
+          <Progress value={pct} color={PROGRESS_COLOR} size="sm" radius="xl" />
         </Box>
       ) : (
-        <Text size="10px" c="dimmed" mt={8}>
+        <Text size="xs" c="dimmed" mt={8}>
           {story.stage_reason}
         </Text>
       )}
 
       {story.acceptance.length > 0 && (
-        <Text size="10px" c="dimmed" mt={6}>
+        <Text size="xs" c="dimmed" mt={6}>
           {t('card.acceptance', { count: story.acceptance.length })}
         </Text>
       )}

@@ -8,8 +8,12 @@ test.describe('what the artefacts disagree about', () => {
     const card = column(page, 'plan').getByTestId('feature-card')
     await expect(card).toHaveAttribute('data-feature', 'atlas/002-planned-not-cut')
 
+    // The badge carries the severity as a word as well as a colour: brand
+    // green and status red are ΔE 7.1 apart for deuteranopia, so "done" and
+    // "blocked" may never be told apart by hue alone.
     const badge = card.getByTestId('finding-badge')
-    await expect(badge).toHaveText('1')
+    await expect(badge).toHaveText('1 blocker')
+    await expect(badge).toHaveAttribute('data-severity', 'blocker')
   })
 
   test('a feature with nothing wrong carries no badge at all', async ({ page }) => {

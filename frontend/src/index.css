@@ -7,6 +7,9 @@ body,
 body {
   margin: 0;
   overflow: hidden;
+  background: var(--surface-page);
+  color: var(--ink-primary);
+  font-size: var(--fs-body);
 }
 
 ::-webkit-scrollbar {
@@ -15,7 +18,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: light-dark(rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.16));
+  background: color-mix(in srgb, var(--ink-muted) 55%, transparent);
   border-radius: 8px;
 }
 

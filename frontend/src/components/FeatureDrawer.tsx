@@ -38,8 +38,8 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Commit, Feature } from '../types'
-import { PRIORITY_COLOR, SEVERITY_COLOR, STAGE_COLOR, STAGE_LABEL } from '../types'
-import { formatBytes, progressColor, projectColor } from '../utils'
+import { PRIORITY_WEIGHT, SEVERITY_VAR, STAGE_LABEL, STAGE_VAR } from '../types'
+import { formatBytes, PROGRESS_COLOR } from '../utils'
 import { useT } from '../i18n'
 import { MarkdownView } from './MarkdownView'
 import classes from './FeatureDrawer.module.css'
@@ -70,7 +70,6 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
   }, [feature?.id, feature?.project_id, focusStory, focusFile, initialTab])
 
   if (!feature) return null
-  const accent = projectColor(feature.project_id)
 
   return (
     <Drawer
@@ -87,14 +86,14 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Box style={{ minWidth: 0 }}>
             <Group gap={6} mb={4}>
-              <Badge variant="light" color={accent} radius="sm">
+              <Badge variant="default" radius="sm">
                 {feature.project_id}
               </Badge>
-              <Badge variant="filled" color={STAGE_COLOR[feature.stage]} radius="sm">
+              <Badge variant="filled" color={STAGE_VAR[feature.stage]} radius="sm">
                 {STAGE_LABEL[feature.stage]}
               </Badge>
               {feature.is_current && (
-                <Badge variant="gradient" gradient={{ from: 'orange', to: 'red' }} radius="sm">
+                <Badge variant="outline" color={PROGRESS_COLOR} radius="sm">
                   current
                 </Badge>
               )}
@@ -114,13 +113,13 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
               size={92}
               thickness={9}
               roundCaps
-              sections={[{ value: feature.progress.pct, color: progressColor(feature.progress.pct) }]}
+              sections={[{ value: feature.progress.pct, color: PROGRESS_COLOR }]}
               label={
                 <Stack gap={0} align="center">
                   <Text fw={700} size="md" lh={1}>
                     {feature.progress.pct}%
                   </Text>
-                  <Text size="10px" c="dimmed">
+                  <Text size="xs" c="dimmed">
                     {feature.progress.done}/{feature.progress.total}
                   </Text>
                 </Stack>
@@ -161,7 +160,7 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
                   variant="light"
                   radius="sm"
                   px={5}
-                  color={SEVERITY_COLOR[feature.findings[0].severity]}
+                  color={SEVERITY_VAR[feature.findings[0].severity]}
                 >
                   {feature.findings.length}
                 </Badge>
@@ -210,7 +209,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
       <Stack gap="lg" pr="sm">
         {feature.open_questions.length > 0 && (
           <Alert
-            color="red"
+            color="var(--status-blocker)"
             variant="light"
             icon={<IconAlertTriangle size={16} />}
             title={t('card.openQuestions', { count: feature.open_questions.length })}
@@ -273,7 +272,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
                         <Badge
                           size="sm"
                           radius="sm"
-                          color={PRIORITY_COLOR[story.priority ?? ''] ?? 'gray'}
+                          fw={PRIORITY_WEIGHT[story.priority ?? ''] ?? 500}
                           variant="light"
                         >
                           {story.id}
@@ -290,7 +289,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
                             <Group gap={6} wrap="nowrap" w={190}>
                               <Progress
                                 value={pct}
-                                color={progressColor(pct)}
+                                color={PROGRESS_COLOR}
                                 size="sm"
                                 radius="xl"
                                 style={{ flex: 1 }}
@@ -339,101 +338,106 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
           </Box>
         )}
 
+        {/* Reference material — the parts a reader consults rather than scans.
+            One full-width ribbon of it made a 1080px drawer read as a column of
+            very short lines with a lot of nothing to their right. */}
+        <Box className={classes.reference}>
         {Object.keys(feature.tech).length > 0 && (
-          <Box>
-            <SectionTitle>{t('drawer.tech')}</SectionTitle>
-            <Table fz="xs" verticalSpacing={6} withTableBorder>
-              <Table.Tbody>
-                {Object.entries(feature.tech).map(([key, value]) => (
-                  <Table.Tr key={key}>
-                    <Table.Td w={190} fw={600}>
-                      {key}
-                    </Table.Td>
-                    <Table.Td>{value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Box>
-        )}
+            <Box>
+              <SectionTitle>{t('drawer.tech')}</SectionTitle>
+              <Table fz="xs" verticalSpacing={6} withTableBorder>
+                <Table.Tbody>
+                  {Object.entries(feature.tech).map(([key, value]) => (
+                    <Table.Tr key={key}>
+                      <Table.Td w={190} fw={600}>
+                        {key}
+                      </Table.Td>
+                      <Table.Td>{value}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Box>
+          )}
 
-        {feature.success_criteria.length > 0 && (
-          <RequirementList title={t('drawer.successCriteria')} items={feature.success_criteria} color="teal" />
-        )}
-        {feature.requirements.length > 0 && (
-          <RequirementList title={t('drawer.requirements')} items={feature.requirements} color="blue" collapse />
-        )}
+          {feature.success_criteria.length > 0 && (
+            <RequirementList title={t('drawer.successCriteria')} items={feature.success_criteria} color="teal" />
+          )}
+          {feature.requirements.length > 0 && (
+            <RequirementList title={t('drawer.requirements')} items={feature.requirements} color="blue" collapse />
+          )}
 
-        {feature.entities.length > 0 && (
-          <Box>
-            <SectionTitle>{t('drawer.entities')}</SectionTitle>
-            <Stack gap={6}>
-              {feature.entities.map((entity) => (
-                <Group key={entity.name} gap={8} wrap="nowrap" align="flex-start">
-                  <Badge size="xs" variant="light" color="grape" radius="sm" style={{ flex: 'none' }}>
-                    {entity.name}
-                  </Badge>
-                  <Text size="sm" lh={1.5}>
-                    {entity.text}
-                  </Text>
-                </Group>
-              ))}
-            </Stack>
-          </Box>
-        )}
-
-        {[
-          { title: t('drawer.assumptions'), items: feature.assumptions },
-          { title: t('drawer.dependencies'), items: feature.dependencies },
-        ]
-          .filter((block) => block.items.length > 0)
-          .map((block) => (
-            <Box key={block.title}>
-              <SectionTitle>{block.title}</SectionTitle>
+          {feature.entities.length > 0 && (
+            <Box>
+              <SectionTitle>{t('drawer.entities')}</SectionTitle>
               <Stack gap={6}>
-                {block.items.map((item, i) => (
+                {feature.entities.map((entity) => (
+                  <Group key={entity.name} gap={8} wrap="nowrap" align="flex-start">
+                    <Badge size="xs" variant="default" radius="sm" style={{ flex: 'none' }}>
+                      {entity.name}
+                    </Badge>
+                    <Text size="sm" lh={1.5}>
+                      {entity.text}
+                    </Text>
+                  </Group>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {[
+            { title: t('drawer.assumptions'), items: feature.assumptions },
+            { title: t('drawer.dependencies'), items: feature.dependencies },
+          ]
+            .filter((block) => block.items.length > 0)
+            .map((block) => (
+              <Box key={block.title}>
+                <SectionTitle>{block.title}</SectionTitle>
+                <Stack gap={6}>
+                  {block.items.map((item, i) => (
+                    <Text size="sm" key={i} lh={1.55}>
+                      • {item}
+                    </Text>
+                  ))}
+                </Stack>
+              </Box>
+            ))}
+
+          {feature.edge_cases.length > 0 && (
+            <Box>
+              <SectionTitle>{t('drawer.edgeCases')}</SectionTitle>
+              <Stack gap={6}>
+                {feature.edge_cases.map((edge, i) => (
                   <Text size="sm" key={i} lh={1.55}>
-                    • {item}
+                    • {edge}
                   </Text>
                 ))}
               </Stack>
             </Box>
-          ))}
+          )}
 
-        {feature.edge_cases.length > 0 && (
-          <Box>
-            <SectionTitle>{t('drawer.edgeCases')}</SectionTitle>
-            <Stack gap={6}>
-              {feature.edge_cases.map((edge, i) => (
-                <Text size="sm" key={i} lh={1.55}>
-                  • {edge}
-                </Text>
-              ))}
-            </Stack>
-          </Box>
-        )}
+          {feature.clarifications.length > 0 && (
+            <Box>
+              <SectionTitle>{t('drawer.clarifications')}</SectionTitle>
+              <Stack gap={6}>
+                {feature.clarifications.map((c, i) => (
+                  <Text size="sm" key={i} lh={1.55}>
+                    • {c}
+                  </Text>
+                ))}
+              </Stack>
+            </Box>
+          )}
 
-        {feature.clarifications.length > 0 && (
-          <Box>
-            <SectionTitle>{t('drawer.clarifications')}</SectionTitle>
-            <Stack gap={6}>
-              {feature.clarifications.map((c, i) => (
-                <Text size="sm" key={i} lh={1.55}>
-                  • {c}
-                </Text>
-              ))}
-            </Stack>
-          </Box>
-        )}
-
-        {feature.input && (
-          <Box>
-            <SectionTitle>{t('drawer.input')}</SectionTitle>
-            <Text size="xs" c="dimmed" lh={1.6} className={classes.quote}>
-              {feature.input}
-            </Text>
-          </Box>
-        )}
+          {feature.input && (
+            <Box>
+              <SectionTitle>{t('drawer.input')}</SectionTitle>
+              <Text size="xs" c="dimmed" lh={1.6} className={classes.quote}>
+                {feature.input}
+              </Text>
+            </Box>
+          )}
+        </Box>
       </Stack>
     </ScrollArea.Autosize>
   )
@@ -499,7 +503,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
                       {title}
                     </Text>
                     {meta?.priority && (
-                      <Badge size="xs" color={PRIORITY_COLOR[meta.priority] ?? 'gray'} variant="light">
+                      <Badge size="xs" fw={PRIORITY_WEIGHT[meta.priority] ?? 500} variant="default">
                         {meta.priority}
                       </Badge>
                     )}
@@ -507,7 +511,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
                   <Group gap={8} wrap="nowrap" w={150}>
                     <Progress
                       value={pct}
-                      color={progressColor(pct)}
+                      color={PROGRESS_COLOR}
                       size="sm"
                       radius="xl"
                       style={{ flex: 1 }}
@@ -607,11 +611,11 @@ function ChecklistsPanel({ feature }: { feature: Feature }) {
                 <Text fw={650} size="sm">
                   {list.title ?? list.name}
                 </Text>
-                <Badge color={pct === 100 ? 'green' : 'yellow'} variant="light" radius="sm">
+                <Badge variant="default" radius="sm">
                   {list.done}/{list.total}
                 </Badge>
               </Group>
-              <Progress value={pct} color={pct === 100 ? 'green' : 'yellow'} size="sm" radius="xl" mb="sm" />
+              <Progress value={pct} color={PROGRESS_COLOR} size="sm" radius="xl" mb="sm" />
               <Stack gap={3}>
                 {list.items.map((item, i) => (
                   <Group key={i} gap={8} wrap="nowrap" align="flex-start">
@@ -693,7 +697,7 @@ function GitPanel({ feature }: { feature: Feature }) {
     }
   }, [feature.id, feature.project_id])
 
-  if (error) return <Alert color="red">{error}</Alert>
+  if (error) return <Alert color="var(--status-blocker)">{error}</Alert>
   if (commits === null) return <Loader size="sm" />
   if (!commits.length) {
     return (
@@ -754,7 +758,7 @@ function ChecksPanel({ feature }: { feature: Feature }) {
                       size="xs"
                       radius="sm"
                       variant="light"
-                      color={SEVERITY_COLOR[finding.severity]}
+                      color={SEVERITY_VAR[finding.severity]}
                       style={{ flex: 'none' }}
                     >
                       {t(`checks.severity.${finding.severity}`)}
@@ -792,12 +796,14 @@ function ChecksPanel({ feature }: { feature: Feature }) {
               <Badge
                 radius="sm"
                 variant={constitution.verdict === 'unknown' ? 'default' : 'filled'}
+                // Status, with the verdict spelled out beside it — never the
+                // colour on its own.
                 color={
                   constitution.verdict === 'pass'
-                    ? 'green'
+                    ? PROGRESS_COLOR
                     : constitution.verdict === 'fail'
-                      ? 'red'
-                      : 'gray'
+                      ? SEVERITY_VAR.blocker
+                      : SEVERITY_VAR.info
                 }
                 style={{ flex: 'none' }}
               >
@@ -854,7 +860,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card withBorder radius="md" padding="xs">
-      <Text size="10px" tt="uppercase" c="dimmed" fw={700}>
+      <Text size="xs" tt="uppercase" c="dimmed" fw={700}>
         {label}
       </Text>
       <Text size="sm" fw={650} lineClamp={2} lh={1.3}>

@@ -35,7 +35,7 @@ export function MarkdownView({ projectId, featureId, file }: Props) {
     }
   }, [projectId, featureId, file])
 
-  if (error) return <Alert color="red" title={t('drawer.loadFailed', { file })}>{error}</Alert>
+  if (error) return <Alert color="var(--status-blocker)" title={t('drawer.loadFailed', { file })}>{error}</Alert>
   if (text === null) return <Loader size="sm" />
 
   const isMarkdown = file.endsWith('.md')

@@ -52,6 +52,15 @@ const EN = {
   'stage.implement.hint': 'Tasks are being closed',
   'stage.done.hint': 'Every task is closed',
 
+  // An empty column says what would put a card in it, in the same terms the
+  // scanner uses when it explains where a card already sits.
+  'stage.specify.empty': 'Nothing is at spec.md alone. A feature lands here the moment one exists.',
+  'stage.clarify.empty': 'Nothing is clarified and waiting. Features pass through here quickly.',
+  'stage.plan.empty': 'Nothing has a plan.md without a tasks.md beside it.',
+  'stage.tasks.empty': 'Nothing has tasks cut and none of them ticked yet.',
+  'stage.implement.empty': 'Nothing is part way through its task list.',
+  'stage.done.empty': 'Nothing has every task ticked yet.',
+
   'card.open': 'Open {title}',
   'card.tasks': 'tasks',
   'card.parallel': 'Can be done in parallel',
@@ -204,6 +213,13 @@ const RU: Partial<Record<Key, string>> = {
   'stage.tasks.hint': 'Задачи нарезаны, работа не началась',
   'stage.implement.hint': 'Задачи закрываются',
   'stage.done.hint': 'Все задачи закрыты',
+
+  'stage.specify.empty': 'Ни у чего нет только spec.md. Фича попадает сюда, как только он появляется.',
+  'stage.clarify.empty': 'Ничего не уточнено в ожидании плана. Через эту стадию проходят быстро.',
+  'stage.plan.empty': 'Ни у чего нет plan.md без tasks.md рядом.',
+  'stage.tasks.empty': 'Ни у чего задачи не нарезаны при нулевом прогрессе.',
+  'stage.implement.empty': 'Ничего не находится в середине своего списка задач.',
+  'stage.done.empty': 'Ни у чего пока не отмечены все задачи.',
 
   'card.open': 'Открыть {title}',
   'card.tasks': 'задачи',

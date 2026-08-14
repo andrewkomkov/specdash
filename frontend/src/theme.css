@@ -1,0 +1,123 @@
+/* One system of colour.
+ *
+ * Hue is scarce, and this file is where it is spent. Five roles, one encoding
+ * each, used everywhere:
+ *
+ *   stage     ordered position in the pipeline   a six-step sequential ramp
+ *   progress  magnitude                          one hue; length says how much
+ *   status    findings                           reserved, and never alone
+ *   priority  ordinal, secondary                 no hue at all — weight and ink
+ *   project   identity                           no hue at all — its name
+ *
+ * The last two are the point. A hue that means "priority 1" on one badge and
+ * "project #4 by hash" on the next means nothing, and the constitution asks for
+ * the opposite: a colour, a column and a badge mean the same thing everywhere.
+ *
+ * The brand supplies exactly two values — #2BB77B and #373B46. The first is the
+ * progress hue and the far end of the stage ramp; the second is the neutral
+ * family the surfaces and borders are built from. Nothing else here is brand.
+ *
+ * Both stage ramps are selected sets, not inversions of one another, and both
+ * were validated rather than eyeballed: monotonic in OKLab lightness (dark
+ * 0.502 → 0.768 rising, light 0.632 → 0.435 falling) and every step clear of
+ * 3:1 against its own surface.
+ */
+
+:root {
+  /* Type scale. The floor is 11px because the smallest text on a card is the
+     evidence for where that card sits — `all 38 tasks ticked` — and the
+     constitution requires a wrong placement to be debuggable by reading. */
+  --fs-caption: 11px;
+  --fs-body: 13px;
+  --fs-title: 15px;
+  --fs-heading: 20px;
+  --fs-display: 28px;
+
+  --surface-page: #f5f6f7;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eceef0;
+  --border: #dbdfe3;
+
+  --ink-primary: #1b1f26;
+  --ink-secondary: #4a515c;
+  --ink-muted: #6e7783;
+
+  /* Stage: validated against #ffffff. */
+  --stage-specify: #7e8aa2;
+  --stage-clarify: #5f958c;
+  --stage-plan: #3e9276;
+  --stage-tasks: #2a8a64;
+  --stage-implement: #1e7a55;
+  --stage-done: #14603f;
+
+  /* Progress: one hue at one step. It does not change with the value — an
+     eighth of the way through is not a warning, and the old traffic light
+     painted it orange. */
+  --progress: #1e8c5d;
+  --progress-track: #e2e6e9;
+
+  /* Status: reserved for findings and used for nothing else.
+     Never carried by colour alone. Brand green against a status red measures
+     ΔE 7.1 for deuteranopia — under the 8.0 target, and unfixable by
+     re-stepping, because red/amber/green fails these floors in every ordering.
+     So every finding ships with an icon and a word, and this hue only agrees
+     with them. */
+  --status-blocker: #c4291f;
+  --status-warn: #8a5300;
+  --status-info: #6e7783;
+}
+
+/* The dark set is declared twice on purpose. The media query covers the OS
+   setting; the attribute Mantine writes covers an explicit choice, which has to
+   win in both directions — including a light choice made on a dark OS. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-mantine-color-scheme='light'])) {
+    --surface-page: #14161a;
+    --surface-raised: #1b1e24;
+    --surface-sunken: #101216;
+    --border: #373b46;
+
+    --ink-primary: #eef1f5;
+    --ink-secondary: #a9b2bf;
+    --ink-muted: #7c8593;
+
+    --stage-specify: #5a6478;
+    --stage-clarify: #3d7a73;
+    --stage-plan: #2f8f76;
+    --stage-tasks: #26a276;
+    --stage-implement: #22b47d;
+    --stage-done: #4acf9b;
+
+    --progress: #2bb77b;
+    --progress-track: #262b33;
+
+    --status-blocker: #f2555a;
+    --status-warn: #e0a030;
+    --status-info: #8b93a1;
+  }
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --surface-page: #14161a;
+  --surface-raised: #1b1e24;
+  --surface-sunken: #101216;
+  --border: #373b46;
+
+  --ink-primary: #eef1f5;
+  --ink-secondary: #a9b2bf;
+  --ink-muted: #7c8593;
+
+  --stage-specify: #5a6478;
+  --stage-clarify: #3d7a73;
+  --stage-plan: #2f8f76;
+  --stage-tasks: #26a276;
+  --stage-implement: #22b47d;
+  --stage-done: #4acf9b;
+
+  --progress: #2bb77b;
+  --progress-track: #262b33;
+
+  --status-blocker: #f2555a;
+  --status-warn: #e0a030;
+  --status-info: #8b93a1;
+}

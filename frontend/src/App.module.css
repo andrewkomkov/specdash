@@ -1,10 +1,7 @@
 .header {
-  background: light-dark(
-    rgba(255, 255, 255, 0.86),
-    rgba(20, 21, 23, 0.86)
-  );
+  background: color-mix(in srgb, var(--surface-page) 86%, transparent);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {
@@ -13,7 +10,22 @@
   border-radius: var(--mantine-radius-md);
   display: grid;
   place-items: center;
-  color: white;
-  background: linear-gradient(135deg, var(--mantine-color-indigo-6), var(--mantine-color-teal-5));
+  color: #fff;
+  background: var(--progress);
   box-shadow: var(--mantine-shadow-sm);
+}
+
+/* The one number the board exists to report, at the display step of the scale.
+   It was 11px in a corner — below the size of every card title on the page. */
+.headline {
+  font-size: var(--fs-display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

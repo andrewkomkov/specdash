@@ -16,13 +16,16 @@ import { useT } from '../i18n'
 import type { SearchHit, SearchResult } from '../types'
 import classes from './SearchPalette.module.css'
 
+// The kind is spelled out on the badge, so the hue was redundant — and six
+// categorical hues cannot be told apart pairwise anyway, which is why two of
+// these were the colours a finding is entitled to.
 const KIND_COLOR: Record<SearchHit['kind'], string> = {
-  feature: 'indigo',
-  story: 'grape',
-  task: 'teal',
-  requirement: 'blue',
-  checklist: 'yellow',
-  document: 'orange',
+  feature: 'gray',
+  story: 'gray',
+  task: 'gray',
+  requirement: 'gray',
+  checklist: 'gray',
+  document: 'gray',
 }
 
 interface Props {
