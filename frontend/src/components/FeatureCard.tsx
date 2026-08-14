@@ -20,7 +20,7 @@ import {
   IconTargetArrow,
 } from '@tabler/icons-react'
 import type { Feature } from '../types'
-import { PRIORITY_COLOR } from '../types'
+import { PRIORITY_COLOR, SEVERITY_COLOR } from '../types'
 import { progressColor, projectColor } from '../utils'
 import { useT } from '../i18n'
 import classes from './FeatureCard.module.css'
@@ -216,18 +216,35 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
               </Badge>
             </Tooltip>
           )}
-          {feature.open_questions.length > 0 && (
-            <Tooltip label={`${feature.open_questions.length} × NEEDS CLARIFICATION`} withArrow>
+          {/* Subsumes the old NEEDS CLARIFICATION badge: an open marker is one
+              finding among several, and two badges for the same fact read as
+              two problems. */}
+          {feature.findings.length > 0 && (
+            <Tooltip
+              withArrow
+              multiline
+              w={320}
+              label={feature.findings
+                .slice(0, 4)
+                .map((f) => `• ${f.message}`)
+                .concat(
+                  feature.findings.length > 4
+                    ? [t('checks.andMore', { count: feature.findings.length - 4 })]
+                    : [],
+                )
+                .join('\n')}
+            >
               <Badge
                 size="xs"
                 radius="sm"
                 px={5}
-                color="red"
+                color={SEVERITY_COLOR[feature.findings[0].severity]}
                 variant="light"
                 leftSection={<IconAlertTriangle size={10} />}
                 className={classes.pill}
+                data-testid="finding-badge"
               >
-                {feature.open_questions.length}
+                {feature.findings.length}
               </Badge>
             </Tooltip>
           )}

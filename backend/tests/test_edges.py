@@ -95,7 +95,7 @@ def test_a_backticked_token_that_is_not_a_path_is_not_treated_as_one():
 
 
 def test_a_technical_context_key_that_is_not_recognised_is_ignored():
-    _, tech = parsing.parse_plan(
+    _, tech, _ = parsing.parse_plan(
         "## Technical Context\n\n**Language/Version**: Python\n**Astrology**: Leo\n"
     )
 

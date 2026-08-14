@@ -64,6 +64,9 @@ class UserStory(BaseModel):
     acceptance: list[AcceptanceScenario] = Field(default_factory=list)
     done: int = 0
     total: int = 0
+    # False for a story only tasks.md knows about. It still gets a card — losing
+    # it would make the column totals stop adding up — but the gap is reportable.
+    in_spec: bool = True
 
     # Where this story sits on its own evidence, so the board can lay stories out
     # by stage rather than only whole features.
@@ -89,6 +92,102 @@ class Checklist(BaseModel):
     items: list[ChecklistItem] = Field(default_factory=list)
     done: int = 0
     total: int = 0
+
+
+class Entity(BaseModel):
+    """A `**Name**: description` bullet under spec.md's Key Entities."""
+
+    name: str
+    text: str
+
+
+Severity = Literal["blocker", "warn", "info"]
+
+# Worst first. A card shows one colour, so the order has to be total.
+SEVERITY_RANK: dict[Severity, int] = {"blocker": 0, "warn": 1, "info": 2}
+
+
+class Finding(BaseModel):
+    """One observed disagreement between two artefacts.
+
+    A finding is never a judgement about whether a document is any good — it
+    records that two files on disk say different things, and names both. It is
+    recomputed on every scan and stored nowhere.
+    """
+
+    code: str  # requirement-unreferenced, open-clarification, …
+    severity: Severity
+    message: str
+    ref: str | None = None  # FR-012, US3, checklists/ux.md
+    file: str | None = None  # relative to the feature directory
+
+
+class ComplexityRow(BaseModel):
+    """One deliberately declared constitutional exception from plan.md."""
+
+    violation: str
+    why_needed: str | None = None
+    alternative: str | None = None
+
+
+class ConstitutionResult(BaseModel):
+    """plan.md's `## Constitution Check` gate, and what the verdict rests on.
+
+    `unknown` is a real answer and the default one: an untouched template
+    section must never read as a pass.
+    """
+
+    verdict: Literal["pass", "fail", "unknown"] = "unknown"
+    evidence: str | None = None  # the line the verdict was drawn from
+    rows: list[ComplexityRow] = Field(default_factory=list)
+
+
+class ManifestFile(BaseModel):
+    """A file spec-kit installed, checked against the digest it recorded."""
+
+    path: str
+    state: Literal["ok", "modified", "missing", "unverified"]
+    reason: str | None = None  # why it could not be verified
+
+
+class Toolchain(BaseModel):
+    """What spec-kit itself put into a project, and whether it is still intact."""
+
+    speckit_version: str | None = None
+    integration: str | None = None
+    integrations: list[str] = Field(default_factory=list)
+    script: str | None = None  # sh | ps
+    feature_numbering: str | None = None
+    files: list[ManifestFile] = Field(default_factory=list)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def drift(self) -> int:
+        return sum(1 for f in self.files if f.state in ("modified", "missing"))
+
+
+class WorkflowStep(BaseModel):
+    id: str
+    kind: Literal["command", "gate"]
+    command: str | None = None
+    message: str | None = None
+    on_reject: str | None = None
+
+
+class DeclaredWorkflow(BaseModel):
+    """A pipeline a project committed to in `.specify/workflows/`.
+
+    Listed even when only the registry knows about it, so a workflow whose file
+    was deleted is visible as exactly that rather than absent.
+    """
+
+    id: str
+    name: str | None = None
+    version: str | None = None
+    description: str | None = None
+    source: str | None = None  # bundled | custom, from the registry
+    steps: list[WorkflowStep] = Field(default_factory=list)
+    error: str | None = None
 
 
 class Artifact(BaseModel):
@@ -196,6 +295,18 @@ class Feature(BaseModel):
     clarifications: list[str] = Field(default_factory=list)
     tech: dict[str, str] = Field(default_factory=dict)  # from plan.md Technical Context
     open_questions: list[str] = Field(default_factory=list)  # [NEEDS CLARIFICATION]
+    entities: list[Entity] = Field(default_factory=list)  # spec.md Key Entities
+    assumptions: list[str] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
+    # Ids declared twice inside one section. The parser keeps the first and
+    # records the rest here rather than dropping the fact along with the bullet.
+    duplicate_requirements: list[str] = Field(default_factory=list)
+
+    # plan.md's constitution gate. None means the section is absent, which is a
+    # different fact from a section that resolved to "unknown".
+    constitution: ConstitutionResult | None = None
+    # Derived, never stored: what this feature's own artefacts disagree about.
+    findings: list[Finding] = Field(default_factory=list)
 
     modified: float = 0.0
     commits: list[Commit] = Field(default_factory=list)
@@ -211,6 +322,10 @@ class Project(BaseModel):
     current_feature: str | None = None
     branch: str | None = None
     features: list[Feature] = Field(default_factory=list)
+    # Properties of the project rather than of any feature, so the portfolio
+    # question can be answered without opening one.
+    toolchain: Toolchain | None = None
+    workflows: list[DeclaredWorkflow] = Field(default_factory=list)
     modified: float = 0.0
     error: str | None = None
 

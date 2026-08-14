@@ -15,7 +15,7 @@ import re
 import time
 from pathlib import Path
 
-from . import git, parsing
+from . import checks, git, parsing, toolchain
 from .models import (
     Artifact,
     Commit,
@@ -214,7 +214,9 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
 
     spec = parsing.parse_spec(texts.get("spec", "")) if "spec" in texts else parsing.SpecInfo()
     phases, tasks = parsing.parse_tasks(texts["tasks"]) if "tasks" in texts else ([], [])
-    plan_summary, tech = parsing.parse_plan(texts["plan"]) if "plan" in texts else (None, {})
+    plan_summary, tech, constitution = (
+        parsing.parse_plan(texts["plan"]) if "plan" in texts else (None, {}, None)
+    )
 
     checklists = []
     checklist_dir = feature_dir / "checklists"
@@ -256,6 +258,9 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
                 priority=phase.priority if phase else None,
                 done=sum(1 for t in owned if t.done),
                 total=len(owned),
+                # Marked rather than hidden: the card is still owed, but the
+                # fact that spec.md never introduced this story is reportable.
+                in_spec=False,
             )
         )
     spec.user_stories.sort(key=lambda s: s.number)
@@ -296,7 +301,7 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
 
     title = spec.title or slug.replace("-", " ").title()
 
-    return Feature(
+    feature = Feature(
         id=dir_name,
         project_id=project.id,
         number=number,
@@ -324,8 +329,17 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
         clarifications=spec.clarifications,
         tech=tech,
         open_questions=spec.open_questions,
+        entities=spec.entities,
+        assumptions=spec.assumptions,
+        dependencies=spec.dependencies,
+        duplicate_requirements=spec.duplicate_requirements,
+        constitution=constitution,
         modified=modified,
     )
+    # Last, and over the finished feature: three rules read the resolved stage,
+    # which does not exist until everything above has run.
+    feature.findings = checks.findings_for(feature)
+    return feature
 
 
 def project_ids(paths: list[Path]) -> dict[Path, tuple[str, str]]:
@@ -396,6 +410,12 @@ def scan_project(path: Path, *, project_id: str | None = None, name: str | None 
             project.constitution_version = vm.group(1) if vm else None
         except OSError:
             pass
+
+    # Properties of the project, so the portfolio question — which of these is
+    # on an old spec-kit, which has hand-edited skills — is answerable without
+    # opening a feature.
+    project.toolchain = toolchain.read_toolchain(path)
+    project.workflows = toolchain.read_workflows(path)
 
     if with_git and (path / ".git").exists():
         project.branch = git.run(path, "rev-parse", "--abbrev-ref", "HEAD")

@@ -33,11 +33,12 @@ import {
   IconGitCommit,
   IconLayoutList,
   IconListCheck,
+  IconShieldCheck,
   IconTargetArrow,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Commit, Feature } from '../types'
-import { PRIORITY_COLOR, STAGE_COLOR, STAGE_LABEL } from '../types'
+import { PRIORITY_COLOR, SEVERITY_COLOR, STAGE_COLOR, STAGE_LABEL } from '../types'
 import { formatBytes, progressColor, projectColor } from '../utils'
 import { useT } from '../i18n'
 import { MarkdownView } from './MarkdownView'
@@ -150,6 +151,25 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
           <Tabs.Tab value="checklists" leftSection={<IconChecklist size={14} />}>
             {t('drawer.checklists')}
           </Tabs.Tab>
+          <Tabs.Tab
+            value="checks"
+            leftSection={<IconShieldCheck size={14} />}
+            rightSection={
+              feature.findings.length ? (
+                <Badge
+                  size="xs"
+                  variant="light"
+                  radius="sm"
+                  px={5}
+                  color={SEVERITY_COLOR[feature.findings[0].severity]}
+                >
+                  {feature.findings.length}
+                </Badge>
+              ) : null
+            }
+          >
+            {t('drawer.checks')}
+          </Tabs.Tab>
           <Tabs.Tab value="docs" leftSection={<IconFileText size={14} />}>
             {t('drawer.docs')}
           </Tabs.Tab>
@@ -167,6 +187,9 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
           </Tabs.Panel>
           <Tabs.Panel value="checklists">
             <ChecklistsPanel feature={feature} />
+          </Tabs.Panel>
+          <Tabs.Panel value="checks">
+            <ChecksPanel feature={feature} />
           </Tabs.Panel>
           <Tabs.Panel value="docs">
             <DocsPanel feature={feature} openFile={openFile} setOpenFile={setOpenFile} />
@@ -340,6 +363,42 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
         {feature.requirements.length > 0 && (
           <RequirementList title={t('drawer.requirements')} items={feature.requirements} color="blue" collapse />
         )}
+
+        {feature.entities.length > 0 && (
+          <Box>
+            <SectionTitle>{t('drawer.entities')}</SectionTitle>
+            <Stack gap={6}>
+              {feature.entities.map((entity) => (
+                <Group key={entity.name} gap={8} wrap="nowrap" align="flex-start">
+                  <Badge size="xs" variant="light" color="grape" radius="sm" style={{ flex: 'none' }}>
+                    {entity.name}
+                  </Badge>
+                  <Text size="sm" lh={1.5}>
+                    {entity.text}
+                  </Text>
+                </Group>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {[
+          { title: t('drawer.assumptions'), items: feature.assumptions },
+          { title: t('drawer.dependencies'), items: feature.dependencies },
+        ]
+          .filter((block) => block.items.length > 0)
+          .map((block) => (
+            <Box key={block.title}>
+              <SectionTitle>{block.title}</SectionTitle>
+              <Stack gap={6}>
+                {block.items.map((item, i) => (
+                  <Text size="sm" key={i} lh={1.55}>
+                    • {item}
+                  </Text>
+                ))}
+              </Stack>
+            </Box>
+          ))}
 
         {feature.edge_cases.length > 0 && (
           <Box>
@@ -659,6 +718,127 @@ function GitPanel({ feature }: { feature: Feature }) {
           </Timeline.Item>
         ))}
       </Timeline>
+    </ScrollArea.Autosize>
+  )
+}
+
+/** Findings, the constitution gate, and the exceptions the plan declared.
+ *
+ * Ordered by what a reader needs first: what is wrong, then whether the plan
+ * passes its own rules, then the violations it chose deliberately. The third
+ * is not a problem list — a declared exception is the opposite of one nobody
+ * noticed — so it is styled as a record rather than as an alert.
+ */
+function ChecksPanel({ feature }: { feature: Feature }) {
+  const { t } = useT()
+  const constitution = feature.constitution
+  const rows = constitution?.rows ?? []
+
+  return (
+    <ScrollArea.Autosize mah="calc(100vh - 210px)" type="hover">
+      <Stack gap="lg" pr="sm">
+        <Box>
+          <SectionTitle>
+            {t('checks.findings')} ({feature.findings.length})
+          </SectionTitle>
+          {feature.findings.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              {t('checks.none')}
+            </Text>
+          ) : (
+            <Stack gap={6}>
+              {feature.findings.map((finding, i) => (
+                <Card withBorder radius="md" padding="xs" key={`${finding.code}-${finding.ref}-${i}`}>
+                  <Group gap={8} wrap="nowrap" align="flex-start">
+                    <Badge
+                      size="xs"
+                      radius="sm"
+                      variant="light"
+                      color={SEVERITY_COLOR[finding.severity]}
+                      style={{ flex: 'none' }}
+                    >
+                      {t(`checks.severity.${finding.severity}`)}
+                    </Badge>
+                    <Box style={{ minWidth: 0 }}>
+                      <Text size="sm" lh={1.45}>
+                        {finding.message}
+                      </Text>
+                      {/* Every derived state carries its evidence, so the file
+                          that disagrees is named rather than implied. */}
+                      <Group gap={6} mt={2}>
+                        <Code fz={10}>{finding.code}</Code>
+                        {finding.file && (
+                          <Text size="xs" c="dimmed">
+                            {finding.file}
+                          </Text>
+                        )}
+                      </Group>
+                    </Box>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Box>
+          <SectionTitle>{t('checks.constitution')}</SectionTitle>
+          {!constitution ? (
+            <Text size="sm" c="dimmed">
+              {t('checks.noSection')}
+            </Text>
+          ) : (
+            <Group gap={8} align="flex-start" wrap="nowrap">
+              <Badge
+                radius="sm"
+                variant={constitution.verdict === 'unknown' ? 'default' : 'filled'}
+                color={
+                  constitution.verdict === 'pass'
+                    ? 'green'
+                    : constitution.verdict === 'fail'
+                      ? 'red'
+                      : 'gray'
+                }
+                style={{ flex: 'none' }}
+              >
+                {t(`checks.verdict.${constitution.verdict}`)}
+              </Badge>
+              <Text size="sm" c={constitution.evidence ? undefined : 'dimmed'} lh={1.5}>
+                {constitution.evidence ?? t('checks.noEvidence')}
+              </Text>
+            </Group>
+          )}
+        </Box>
+
+        {rows.length > 0 && (
+          <Box>
+            <SectionTitle>
+              {t('checks.complexity')} ({rows.length})
+            </SectionTitle>
+            <Text size="xs" c="dimmed" mb="xs">
+              {t('checks.complexityHint')}
+            </Text>
+            <Table withTableBorder withColumnBorders fz="xs" verticalSpacing={6}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('checks.violation')}</Table.Th>
+                  <Table.Th>{t('checks.whyNeeded')}</Table.Th>
+                  <Table.Th>{t('checks.alternative')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {rows.map((row, i) => (
+                  <Table.Tr key={i}>
+                    <Table.Td>{row.violation}</Table.Td>
+                    <Table.Td>{row.why_needed ?? '—'}</Table.Td>
+                    <Table.Td>{row.alternative ?? '—'}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Box>
+        )}
+      </Stack>
     </ScrollArea.Autosize>
   )
 }
