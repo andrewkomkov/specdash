@@ -13,16 +13,20 @@
   }
 }
 
+/* Each column wears its own step of the stage ramp as a top rule, so the six
+   read as one sequence with a direction rather than as six grey boxes. */
 .column {
   border-radius: var(--mantine-radius-lg);
-  background: light-dark(var(--mantine-color-gray-0), rgba(255, 255, 255, 0.02));
-  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6));
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--stage);
   padding: var(--mantine-spacing-xs);
   min-width: 0;
 }
 
 .header {
   padding: 6px 8px 8px;
+  background: var(--surface-sunken);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -33,10 +37,26 @@
   height: 8px;
   border-radius: 50%;
   flex: none;
+  background: var(--stage);
+}
+
+.stageName {
+  letter-spacing: 0.06em;
+  color: var(--ink-primary);
+}
+
+.count {
+  color: var(--ink-secondary);
+}
+
+/* A grid item's min-width defaults to auto, so one nowrap row inside a card is
+   enough to push the whole card out of its column. */
+.column > * {
+  min-width: 0;
 }
 
 .empty {
-  border: 1px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-5));
+  border: 1px dashed var(--border);
   border-radius: var(--mantine-radius-md);
   padding: var(--mantine-spacing-md);
   text-align: center;

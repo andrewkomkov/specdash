@@ -76,6 +76,7 @@ test.describe('the board can be read at two grains', () => {
 
     await expect(page.getByTestId('feature-card')).toHaveCount(0)
     await expect(page.getByRole('banner')).toContainText('0 features')
-    await expect(column(page, 'done')).toContainText('empty')
+    // 009 replaced the word "empty" with what would put a card there.
+    await expect(column(page, 'done')).toContainText('Nothing has every task ticked')
   })
 })

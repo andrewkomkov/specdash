@@ -17,19 +17,19 @@
 .markdown blockquote {
   margin: var(--mantine-spacing-xs) 0;
   padding-left: var(--mantine-spacing-sm);
-  border-left: 3px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-left: 3px solid var(--border);
   color: var(--mantine-color-dimmed);
 }
 
 .markdown hr {
   border: none;
-  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-top: 1px solid var(--border);
   margin: var(--mantine-spacing-md) 0;
 }
 
 .markdown input[type='checkbox'] {
   margin-right: 6px;
-  accent-color: var(--mantine-color-teal-6);
+  accent-color: var(--progress);
 }
 
 .paragraph {

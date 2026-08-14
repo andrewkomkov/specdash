@@ -12,7 +12,7 @@ test.describe('the board speaks the reader’s language', () => {
 
     await expect(page.getByRole('banner')).toContainText('spec-kit · read-only')
     await expect(page.getByRole('banner')).toContainText('Features')
-    await expect(column(page, 'clarify')).toContainText('empty')
+    await expect(column(page, 'clarify')).toContainText('Nothing is clarified')
     await expect(column(page, 'implement')).toContainText('tasks in this column')
   })
 
@@ -22,7 +22,7 @@ test.describe('the board speaks the reader’s language', () => {
 
     await expect(page.getByRole('banner')).toContainText('spec-kit · только чтение')
     await expect(page.getByRole('banner')).toContainText('Фичи')
-    await expect(column(page, 'clarify')).toContainText('пусто')
+    await expect(column(page, 'clarify')).toContainText('Ничего не уточнено')
     await expect(column(page, 'implement')).toContainText('задач в колонке')
   })
 

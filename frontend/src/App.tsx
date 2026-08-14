@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   AppShell,
-  Badge,
   Box,
   Chip,
   Group,
@@ -31,7 +30,6 @@ import { Board, StoryBoard } from './components/Board'
 import type { StoryRow } from './components/StoryCard'
 import type { Feature } from './types'
 import { useSnapshot } from './useSnapshot'
-import { projectColor } from './utils'
 import { LANGS, useT } from './i18n'
 import classes from './App.module.css'
 
@@ -171,7 +169,7 @@ export default function App() {
               <Title order={4} lh={1}>
                 SpecDash
               </Title>
-              <Text size="10px" c="dimmed">
+              <Text size="xs" c="dimmed">
                 {t('app.tagline')}
               </Text>
             </Box>
@@ -279,7 +277,10 @@ export default function App() {
                     size="xs"
                     radius="sm"
                     checked={active}
-                    color={project.error ? 'red' : projectColor(project.id)}
+                    // Identity is the name. A hue assigned by hashing the id
+                    // meant "project #4", cycled past ten, and spent three of
+                    // the colours a finding needs.
+                    color={project.error ? 'var(--status-blocker)' : 'gray'}
                     onChange={() =>
                       setHidden((current) =>
                         active ? [...current, project.id] : current.filter((id) => id !== project.id),
@@ -287,7 +288,7 @@ export default function App() {
                     }
                   >
                     {project.name}
-                    <Text component="span" size="10px" c="dimmed" ml={5}>
+                    <Text component="span" size="xs" c="dimmed" ml={5}>
                       {project.features.length}
                     </Text>
                   </Chip>
@@ -298,32 +299,44 @@ export default function App() {
           </Group>
 
           <Group gap="md" wrap="nowrap">
-            {totals.total > 0 && (
-              <Tooltip
-                withArrow
-                label={
-                  view === 'stories'
-                    ? t('board.tasksOfShownStories')
-                    : t('board.tasksOfShownFeatures')
-                }
-              >
-                <Group gap={8} wrap="nowrap" w={230}>
-                  <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                    {totals.done}/{totals.total} {t('board.tasks')}
-                  </Text>
-                  <Progress value={pct} size="sm" radius="xl" color="teal" style={{ flex: 1 }} />
-                  <Text size="xs" fw={700} w={32} ta="right">
-                    {pct}%
-                  </Text>
-                </Group>
-              </Tooltip>
-            )}
-            <Badge variant="default" radius="sm" size="sm">
-              {view === 'stories' ? n(storyRows.length, 'story') : n(features.length, 'feature')}
-            </Badge>
+            {/* The state of the whole portfolio is what this board exists to
+                report, and it was set at 11px in a corner — smaller than every
+                card title on the page. */}
+            {/* The count is outside the tooltip block on purpose: a search
+                that matches nothing still has to say "0 features" rather than
+                showing nothing at all. */}
+            <Group gap={10} wrap="nowrap" align="center">
+              {totals.total > 0 && (
+                <Tooltip
+                  withArrow
+                  label={
+                    view === 'stories'
+                      ? t('board.tasksOfShownStories')
+                      : t('board.tasksOfShownFeatures')
+                  }
+                >
+                  <Group gap={10} wrap="nowrap" align="center">
+                    <Text className={classes.headline} data-testid="headline-pct">
+                      {pct}%
+                    </Text>
+                    <Stack gap={2} w={130}>
+                      <Text size="xs" c="dimmed" className={classes.tabular}>
+                        {totals.done}/{totals.total} {t('board.tasks')}
+                      </Text>
+                      <Progress value={pct} size="sm" radius="xl" color="var(--progress)" />
+                    </Stack>
+                  </Group>
+                </Tooltip>
+              )}
+              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                {view === 'stories'
+                  ? n(storyRows.length, 'story')
+                  : n(features.length, 'feature')}
+              </Text>
+            </Group>
             {snapshot && (
               <Tooltip label={reason || t('app.lastScan')} withArrow>
-                <Text size="10px" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                   {ago(snapshot.generated_at)} · {t('app.ms', { ms: snapshot.scan_ms })}
                 </Text>
               </Tooltip>

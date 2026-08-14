@@ -35,7 +35,8 @@ test.describe('the board places every feature by its files', () => {
 
   test('Clarify and Tasks are empty, and say so rather than looking broken', async ({ page }) => {
     await expect(column(page, 'clarify').getByTestId('feature-card')).toHaveCount(0)
-    await expect(column(page, 'clarify')).toContainText('empty')
+    // 009 replaced the word "empty" with the reason a card would land here.
+    await expect(column(page, 'clarify')).toContainText('Nothing is clarified')
     await expect(column(page, 'tasks').getByTestId('feature-card')).toHaveCount(0)
   })
 

@@ -1,8 +1,8 @@
 import { Badge, Box, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Feature, Stage } from '../types'
-import { STAGE_COLOR, STAGE_LABEL, STAGES } from '../types'
+import { STAGE_LABEL, STAGE_VAR, STAGES } from '../types'
 import { useT } from '../i18n'
 import { FeatureCard } from './FeatureCard'
 import { StoryCard } from './StoryCard'
@@ -99,18 +99,25 @@ function Column({
   children: ReactNode
 }) {
   const { t } = useT()
-  const color = STAGE_COLOR[stage]
+  const color = STAGE_VAR[stage]
 
   return (
-    <Box className={classes.column} data-stage={stage} data-testid={`column-${stage}`}>
+    <Box
+      className={classes.column}
+      data-stage={stage}
+      data-testid={`column-${stage}`}
+      // The ramp advances left to right, so the six columns read as a sequence
+      // rather than as six unrelated containers.
+      style={{ '--stage': color } as CSSProperties}
+    >
       <Box className={classes.header}>
         <Group justify="space-between" wrap="nowrap" gap={6}>
           <Group gap={7} wrap="nowrap">
-            <Box className={classes.dot} style={{ background: `var(--mantine-color-${color}-6)` }} />
-            <Text fw={700} size="xs" tt="uppercase" style={{ letterSpacing: '0.06em' }}>
+            <Box className={classes.dot} />
+            <Text fw={700} size="xs" tt="uppercase" className={classes.stageName}>
               {STAGE_LABEL[stage]}
             </Text>
-            <Badge size="xs" variant="light" color={color} radius="sm">
+            <Badge size="xs" variant="default" radius="sm" className={classes.count}>
               {count}
             </Badge>
           </Group>
@@ -121,7 +128,7 @@ function Column({
           </Tooltip>
         </Group>
         {total > 0 && (
-          <Text size="10px" c="dimmed" mt={2}>
+          <Text size="xs" c="dimmed" mt={2}>
             {t('board.columnTotals', { done, total })}
           </Text>
         )}
@@ -131,9 +138,12 @@ function Column({
         <Stack gap="sm" p={3} pb="md">
           {children}
           {count === 0 && (
+            /* "empty" said nothing. The board already knows what puts a
+               card in each column — it is the same evidence a card cites to
+               explain where it sits — so the column says that instead. */
             <Box className={classes.empty}>
-              <Text size="xs" c="dimmed">
-                {t('board.empty')}
+              <Text size="xs" c="dimmed" ta="center" lh={1.45}>
+                {t(`stage.${stage}.empty` as 'stage.done.empty')}
               </Text>
             </Box>
           )}

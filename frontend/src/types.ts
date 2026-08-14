@@ -11,20 +11,39 @@ export const STAGE_LABEL: Record<Stage, string> = {
   done: 'Done',
 }
 
-export const STAGE_COLOR: Record<Stage, string> = {
-  specify: 'grape',
-  clarify: 'violet',
-  plan: 'indigo',
-  tasks: 'cyan',
-  implement: 'teal',
-  done: 'green',
+/** The stage ramp, as CSS custom properties.
+ *
+ * Six ordered steps rather than six unrelated hues: a pipeline has a direction,
+ * and the old grape → violet → indigo → cyan → teal → green said only that the
+ * stages were different from each other. Each scheme declares its own set in
+ * `theme.css`; neither is an inversion of the other.
+ */
+export const STAGE_VAR: Record<Stage, string> = {
+  specify: 'var(--stage-specify)',
+  clarify: 'var(--stage-clarify)',
+  plan: 'var(--stage-plan)',
+  tasks: 'var(--stage-tasks)',
+  implement: 'var(--stage-implement)',
+  done: 'var(--stage-done)',
 }
 
-export const PRIORITY_COLOR: Record<string, string> = {
-  P1: 'red',
-  P2: 'orange',
-  P3: 'yellow',
-  P4: 'gray',
+/** Priority carries weight, not hue.
+ *
+ * It used to be red/orange/yellow, which is why every finished P1 feature in
+ * the Done column read as an emergency. Those hues belong to findings, and a
+ * priority is not a problem — it is an ordering.
+ */
+export const PRIORITY_WEIGHT: Record<string, number> = {
+  P1: 800,
+  P2: 650,
+  P3: 500,
+  P4: 400,
+}
+
+export const SEVERITY_VAR: Record<Severity, string> = {
+  blocker: 'var(--status-blocker)',
+  warn: 'var(--status-warn)',
+  info: 'var(--status-info)',
 }
 
 export interface Progress {
@@ -70,8 +89,6 @@ export interface UserStory {
   total: number
   stage: Stage
   stage_reason: string
-  /** false for a story only tasks.md knows about */
-  in_spec: boolean
 }
 
 export interface Requirement {
@@ -89,12 +106,6 @@ export interface Checklist {
 }
 
 export type Severity = 'blocker' | 'warn' | 'info'
-
-export const SEVERITY_COLOR: Record<Severity, string> = {
-  blocker: 'red',
-  warn: 'orange',
-  info: 'gray',
-}
 
 /** One observed disagreement between two of a feature's artefacts. */
 export interface Finding {

@@ -1,7 +1,7 @@
 .head {
   padding: var(--mantine-spacing-lg) var(--mantine-spacing-lg) var(--mantine-spacing-md);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
-  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-sunken);
 }
 
 .tabs {
@@ -13,7 +13,7 @@
 }
 
 .quote {
-  border-left: 3px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-left: 3px solid var(--border);
   padding-left: var(--mantine-spacing-sm);
 }
 
@@ -30,4 +30,24 @@
 
 .navlink {
   border-radius: var(--mantine-radius-sm);
+}
+
+/* Reference blocks flow into two columns where there is room for them. Above
+   900px a single column left half the drawer empty and made every requirement
+   a very short line. */
+.reference > * + * {
+  margin-top: var(--mantine-spacing-lg);
+}
+
+@media (min-width: 900px) {
+  .reference {
+    columns: 2;
+    column-gap: var(--mantine-spacing-xl);
+  }
+
+  .reference > * {
+    break-inside: avoid;
+    margin-top: 0;
+    margin-bottom: var(--mantine-spacing-lg);
+  }
 }
