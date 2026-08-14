@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+from conftest import _git
+
 from app import git, history
 
 
@@ -205,3 +208,89 @@ def test_a_truncated_batch_payload_is_survived(repo, monkeypatch):
 def test_an_unparseable_date_counts_as_today():
     assert history._days_since("not-a-date") == 0
     assert history._days_since("2026-01-01T10:00:00") >= 0
+
+
+# --------------------------------------------------------------------------
+# ordering — the series is a time series, so time orders it
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def rebased_repo(tmp_path_factory):
+    """A repository whose author dates run counter to its commit order.
+
+    This is what a rebase leaves behind: it preserves the author date, so a
+    branch commit written earlier lands on top of a squash commit created
+    later. Ordinary, and it used to draw the trend line backwards.
+    """
+    root = tmp_path_factory.mktemp("rebased")
+    feature = root / "specs" / "001-out-of-order"
+    feature.mkdir(parents=True)
+    _git(root, "init", "--initial-branch=main")
+
+    # Third commit is authored *before* the second, exactly as a rebase leaves it.
+    revisions = [
+        ("- [ ] T001 one\n- [ ] T002 two\n", "2026-01-01T10:00:00+00:00"),
+        ("- [x] T001 one\n- [ ] T002 two\n", "2026-01-03T10:00:00+00:00"),
+        ("- [x] T001 one\n- [x] T002 two\n", "2026-01-02T10:00:00+00:00"),
+    ]
+    for index, (body, authored) in enumerate(revisions, start=1):
+        (feature / "tasks.md").write_text(f"# Tasks\n\n## Phase 1: Setup\n\n{body}", encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(
+            root,
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "--no-verify",
+            "-m",
+            f"feat: revision {index}",
+            "--date",
+            authored,
+        )
+    return root
+
+
+def test_a_rebased_history_still_reads_oldest_to_newest(rebased_repo):
+    """The defect CI caught on a rebased branch: the chart's last segment
+    travelled backwards in time, because the series was ordered by the order
+    git printed its commits rather than by the date on each point."""
+    points = history.project_history(rebased_repo, "rebased").points
+
+    dates = [p.date for p in points]
+    assert dates == sorted(dates), dates
+    # And the fixture genuinely reproduces it: git's own order is not sorted.
+    assert [p.subject for p in points] != ["feat: revision 1", "feat: revision 2", "feat: revision 3"]
+
+
+def test_the_last_point_is_the_most_recent_because_the_card_reports_it(rebased_repo):
+    points = history.project_history(rebased_repo, "rebased").points
+
+    assert points[-1].date == max(p.date for p in points)
+
+
+def test_an_already_ordered_history_is_unchanged(repo):
+    points = history.project_history(repo, "walked").points
+
+    assert [p.subject for p in points] == [
+        "feat: revision 1",
+        "feat: revision 2",
+        "feat: revision 3",
+    ]
+
+
+def test_a_date_that_cannot_be_parsed_sorts_rather_than_raising():
+    """A scanner bug is not a reason for the sort to take the process down."""
+    assert history._instant("not a date") < history._instant("2026-01-01T00:00:00+00:00")
+
+
+def test_dates_are_compared_as_instants_rather_than_as_text():
+    """`%aI` carries an offset, so two commits in different timezones sort by
+    that offset if compared as strings."""
+    later_text_earlier_instant = "2026-01-01T09:00:00+05:00"  # 04:00 UTC
+    earlier_text_later_instant = "2026-01-01T08:00:00+00:00"  # 08:00 UTC
+
+    assert later_text_earlier_instant > earlier_text_later_instant
+    assert history._instant(later_text_earlier_instant) < history._instant(
+        earlier_text_later_instant
+    )

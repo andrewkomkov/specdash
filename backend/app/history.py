@@ -136,6 +136,21 @@ def _days_since(iso: str) -> int:
     return max(0, (datetime.now(UTC) - when).days)
 
 
+def _instant(date: str) -> datetime:
+    """An ISO 8601 author date as a comparable instant.
+
+    Compared as datetimes rather than as strings: `%aI` carries an offset, and
+    two commits made in different timezones sort by that offset if compared as
+    text. A date that cannot be parsed is a scanner bug rather than a repository
+    quirk, and sorting is the wrong place to raise it — such a point sorts to
+    the front and keeps its place.
+    """
+    try:
+        return datetime.fromisoformat(date)
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+
+
 def project_history(
     project_path: Path,
     project_id: str,
@@ -212,7 +227,13 @@ def project_history(
                 sha=sha, date=date, subject=subject, done=done, total=total, features=files
             )
         )
-    points.reverse()  # oldest first: a chart reads left to right
+    # Oldest first, by the date each point carries rather than by the order git
+    # printed it. `reverse()` was a stand-in for that, correct only while author
+    # date and log order agree — which they stop doing the moment anything is
+    # rebased, cherry-picked, or merged from an older branch. The x-axis is a
+    # date, so the date is what orders it. The sort is stable, so commits
+    # sharing a second keep the order git gave them.
+    points.sort(key=lambda p: _instant(p.date))
 
     if not points:
         return _remember(
