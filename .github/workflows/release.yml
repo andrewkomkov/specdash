@@ -47,7 +47,7 @@ jobs:
       # ghcr needs no secret: the workflow's own token authenticates it, which is
       # the whole reason the image lives here rather than on Docker Hub.
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
