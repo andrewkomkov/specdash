@@ -134,7 +134,12 @@ function Column({
         )}
       </Box>
 
-      <ScrollArea.Autosize mah="calc(100vh - 210px)" type="hover" scrollbarSize={6}>
+      <ScrollArea.Autosize
+        mah="calc(100vh - 210px)"
+        type="hover"
+        scrollbarSize={6}
+        classNames={{ content: classes.scrollContent }}
+      >
         <Stack gap="sm" p={3} pb="md">
           {children}
           {count === 0 && (

@@ -55,6 +55,15 @@
   min-width: 0;
 }
 
+/* And the same defence one level down. Mantine sizes a ScrollArea's content to
+   `min-content`, so a card too wide to fit stretched the stack and spilled
+   across the column's edge — the whole board read as if the columns had come
+   apart. The column is the boundary: a card that cannot fit must lay itself
+   out narrower, never grow past it. */
+.scrollContent {
+  min-width: 0;
+}
+
 .empty {
   border: 1px dashed var(--border);
   border-radius: var(--mantine-radius-md);
