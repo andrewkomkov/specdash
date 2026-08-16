@@ -60,7 +60,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
             {story.priority ? ` · ${story.priority}` : ''}
           </Badge>
           {showProject && (
-            <Badge size="xs" radius="sm" variant="default" className={classes.pill}>
+            <Badge size="xs" radius="sm" variant="default" className={classes.projectPill}>
               {feature.project_id}
             </Badge>
           )}

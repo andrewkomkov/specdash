@@ -82,14 +82,14 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
       />
 
       <Group justify="space-between" wrap="nowrap" gap="xs" mb={6}>
-        <Group gap={6} wrap="nowrap">
+        <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
           <Text className={classes.number}>{feature.number ?? "—"}</Text>
           {showProject && (
             <Badge
               size="xs"
               variant="default"
               radius="sm"
-              className={classes.project}
+              className={`${classes.project} ${classes.projectPill}`}
             >
               {feature.project_id}
             </Badge>
@@ -99,11 +99,18 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
           <Tooltip label={t("card.current")} withArrow>
             {/* Being the active feature is not a warning. The old
                 orange-to-red gradient put alarm colour on the healthiest card
-                on the board. */}
+                on the board.
+
+                It keeps its width because a badge is `overflow: hidden`, which
+                lets a flex row shrink it below its own text — this word came
+                back six pixels short of itself. The project id beside it is a
+                name and may be cut; the word that says a feature is the live
+                one may not. */}
             <Badge
               size="xs"
               variant="outline"
               color={PROGRESS_COLOR}
+              className={classes.pill}
               leftSection={<IconFlame size={11} />}
             >
               current
@@ -242,7 +249,12 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
         )}
       </Stack>
 
-      <Group justify="space-between" mt="sm" gap={6} wrap="nowrap">
+      {/* The documents row is nowrap because its icons are a fixed sequence,
+          but the row as a whole wraps: in a 270px column the four icons, the
+          contracts count, the checklist figure and the age do not fit on one
+          line, and a card may not answer that by growing wider than its
+          column. The age drops below the icons instead. */}
+      <Group justify="space-between" mt="sm" gap={6}>
         <Group gap={5} wrap="nowrap">
           {ARTIFACT_ICONS.map(({ key, label, Icon }) => (
             <Tooltip

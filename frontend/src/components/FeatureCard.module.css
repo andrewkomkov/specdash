@@ -116,9 +116,12 @@
   color: var(--border);
 }
 
+/* Pushed to the end of its line, so it keeps the card's right edge whether it
+   shares the footer row with the documents or has wrapped below them. */
 .footerMeta {
   color: var(--ink-muted);
   white-space: nowrap;
+  margin-inline-start: auto;
 }
 
 /* Badges in the nowrap footer row must keep their intrinsic width. */
@@ -129,4 +132,12 @@
 
 .pill :global(.mantine-Badge-label) {
   overflow: visible;
+}
+
+/* A project id is a name, not a figure: it may be cut. `poraOtdihat` fits and
+   `google_health_strava` does not, and the difference must not be what decides
+   how wide the card is. Mantine's badge already ellipsises its label — all it
+   needs is permission to shrink below its text. */
+.projectPill {
+  min-width: 0;
 }

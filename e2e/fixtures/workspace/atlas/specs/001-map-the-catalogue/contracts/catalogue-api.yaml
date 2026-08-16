@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: Catalogue
+  version: 0.1.0
+paths:
+  /catalogue:
+    get:
+      summary: List everything the catalogue knows about
+      responses:
+        "200":
+          description: The catalogue
