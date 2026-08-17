@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/andrewkomkov/specdash/compare/v0.7.0...v0.7.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **ui:** keep every card inside its column ([#54](https://github.com/andrewkomkov/specdash/issues/54)) ([2b251e6](https://github.com/andrewkomkov/specdash/commit/2b251e6b97113735b9f6bb94b58d50ecba415591))
+
 ## [0.7.0](https://github.com/andrewkomkov/specdash/compare/v0.6.2...v0.7.0) (2026-08-14)
 
 
