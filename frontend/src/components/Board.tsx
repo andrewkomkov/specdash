@@ -2,7 +2,7 @@ import { Badge, Box, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '
 import { IconInfoCircle } from '@tabler/icons-react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Feature, Stage } from '../types'
-import { STAGE_LABEL, STAGE_VAR, STAGES } from '../types'
+import { STAGE_VAR, STAGES } from '../types'
 import { useT } from '../i18n'
 import { FeatureCard } from './FeatureCard'
 import { StoryCard } from './StoryCard'
@@ -112,10 +112,10 @@ function Column({
     >
       <Box className={classes.header}>
         <Group justify="space-between" wrap="nowrap" gap={6}>
-          <Group gap={7} wrap="nowrap">
+          <Group gap={7} wrap="nowrap" style={{ minWidth: 0 }}>
             <Box className={classes.dot} />
             <Text fw={700} size="xs" tt="uppercase" className={classes.stageName}>
-              {STAGE_LABEL[stage]}
+              {t(`stage.${stage}.label` as 'stage.done.label')}
             </Text>
             <Badge size="xs" variant="default" radius="sm" className={classes.count}>
               {count}

@@ -182,7 +182,11 @@ export default function App() {
               ml={8}
             >
               <Text size="xs" c="dimmed" pl={14}>
-                {connection === 'live' ? 'live' : connection === 'connecting' ? 'connecting…' : 'offline'}
+                {connection === 'live'
+                  ? t('app.live')
+                  : connection === 'connecting'
+                    ? t('app.connecting')
+                    : t('app.offline')}
               </Text>
             </Indicator>
           </Group>
@@ -202,12 +206,12 @@ export default function App() {
               id="specdash-search"
               size="xs"
               w={260}
-              placeholder={t('app.search')}
+              placeholder={`${t('app.search')}   /`}
               leftSection={<IconSearch size={14} />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
             />
-            <Tooltip label={`${t('search.open.hint')}  ⌘K`} withArrow>
+            <Tooltip label={`${t('search.open.hint')} (⌘K)`} withArrow>
               <ActionIcon
                 variant="default"
                 size="lg"
@@ -218,13 +222,23 @@ export default function App() {
                 <IconSearch size={16} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('app.rescan')} withArrow>
-              <ActionIcon variant="default" size="lg" onClick={refresh}>
+            <Tooltip label={`${t('app.rescan')} (R)`} withArrow>
+              <ActionIcon
+                variant="default"
+                size="lg"
+                aria-label={t('app.rescan')}
+                onClick={refresh}
+              >
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('app.theme')} withArrow>
-              <ActionIcon variant="default" size="lg" onClick={toggleColorScheme}>
+              <ActionIcon
+                variant="default"
+                size="lg"
+                aria-label={t('app.theme')}
+                onClick={toggleColorScheme}
+              >
                 {colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
               </ActionIcon>
             </Tooltip>
@@ -257,7 +271,8 @@ export default function App() {
                   label={[
                     project.path,
                     project.branch,
-                    project.constitution_version && `constitution ${project.constitution_version}`,
+                    project.constitution_version &&
+                      t('project.constitution', { version: project.constitution_version }),
                     project.toolchain?.speckit_version &&
                       t('project.toolchain', { version: project.toolchain.speckit_version }) +
                         (project.toolchain.integration ? ` · ${project.toolchain.integration}` : ''),
@@ -265,8 +280,10 @@ export default function App() {
                       ? `⚠ ${t('project.drift', { count: project.toolchain.drift })}`
                       : null,
                     project.workflows.length
-                      ? t('project.workflows', { count: project.workflows.length }) +
-                        `: ${project.workflows.map((w) => w.name ?? w.id).join(', ')}`
+                      ? t('project.workflows', {
+                          count: project.workflows.length,
+                          list: project.workflows.map((w) => w.name ?? w.id).join(', '),
+                        })
                       : null,
                     project.error && `⚠ ${project.error}`,
                   ]
@@ -321,7 +338,7 @@ export default function App() {
                     </Text>
                     <Stack gap={2} w={130}>
                       <Text size="xs" c="dimmed" className={classes.tabular}>
-                        {totals.done}/{totals.total} {t('board.tasks')}
+                        {t('board.tasksTotal', { done: totals.done, total: totals.total })}
                       </Text>
                       <Progress value={pct} size="sm" radius="xl" color="var(--progress)" />
                     </Stack>
@@ -337,7 +354,8 @@ export default function App() {
             {snapshot && (
               <Tooltip label={reason || t('app.lastScan')} withArrow>
                 <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                  {ago(snapshot.generated_at)} · {t('app.ms', { ms: snapshot.scan_ms })}
+                  {ago(snapshot.generated_at)} ·{' '}
+                  {t('app.ms', { ms: snapshot.scan_ms.toLocaleString(lang) })}
                 </Text>
               </Tooltip>
             )}

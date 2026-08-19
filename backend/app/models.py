@@ -113,11 +113,18 @@ class Finding(BaseModel):
     A finding is never a judgement about whether a document is any good — it
     records that two files on disk say different things, and names both. It is
     recomputed on every scan and stored nowhere.
+
+    A finding is prose, unlike the scanner's evidence strings, so it crosses the
+    wire twice: as English in `message`, and as the key and variables an
+    interface can render in the reader's own language. `code` stays what it
+    always was — the stable, machine-readable name of the rule.
     """
 
     code: str  # requirement-unreferenced, open-clarification, …
     severity: Severity
     message: str
+    message_key: str = ""
+    message_vars: dict[str, str | int] = Field(default_factory=dict)
     ref: str | None = None  # FR-012, US3, checklists/ux.md
     file: str | None = None  # relative to the feature directory
 
@@ -196,6 +203,10 @@ class Artifact(BaseModel):
     key: str  # spec | plan | tasks | research | data-model | quickstart | contracts/x
     file: str  # path relative to the feature directory
     label: str
+    # The noun in front of a document is ours and is translated; the stem of a
+    # contract or a checklist is the user's filename and is not.
+    label_key: str = ""
+    label_vars: dict[str, str | int] = Field(default_factory=dict)
     bytes: int
     modified: float
     headings: int = 0
@@ -258,6 +269,7 @@ class ProjectHistory(BaseModel):
     project_id: str
     available: bool = False
     reason: str | None = None
+    reason_key: str | None = None
     points: list[HistoryPoint] = Field(default_factory=list)
     stale: list[StaleFeature] = Field(default_factory=list)
     commits_scanned: int = 0

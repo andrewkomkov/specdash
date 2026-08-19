@@ -46,7 +46,7 @@ test.describe('one system of colour', () => {
 
     // Brand green and status red are ΔE 7.1 apart under deuteranopia, so the
     // severity has to survive the colour being ignored entirely.
-    await expect(badge).toHaveText(/blocker|warn|info/)
+    await expect(badge).toHaveText(/blocker|warning|note/)
     await expect(badge.locator('svg')).toBeVisible()
   })
 

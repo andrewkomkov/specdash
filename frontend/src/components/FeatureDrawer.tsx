@@ -38,8 +38,8 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Commit, Feature } from '../types'
-import { PRIORITY_WEIGHT, SEVERITY_VAR, STAGE_LABEL, STAGE_VAR } from '../types'
-import { formatBytes, PROGRESS_COLOR } from '../utils'
+import { PRIORITY_WEIGHT, SEVERITY_VAR, STAGE_VAR } from '../types'
+import { PROGRESS_COLOR } from '../utils'
 import { useT } from '../i18n'
 import { MarkdownView } from './MarkdownView'
 import classes from './FeatureDrawer.module.css'
@@ -90,11 +90,11 @@ export function FeatureDrawer({ feature, focusStory, focusFile, initialTab, onCl
                 {feature.project_id}
               </Badge>
               <Badge variant="filled" color={STAGE_VAR[feature.stage]} radius="sm">
-                {STAGE_LABEL[feature.stage]}
+                {t(`stage.${feature.stage}.label` as 'stage.done.label')}
               </Badge>
               {feature.is_current && (
                 <Badge variant="outline" color={PROGRESS_COLOR} radius="sm">
-                  current
+                  {t('card.currentBadge')}
                 </Badge>
               )}
               <Code fz={11}>{feature.branch ?? feature.id}</Code>
@@ -249,7 +249,7 @@ function Overview({ feature, focusStory }: { feature: Feature; focusStory: strin
           />
           <Stat
             label={t('drawer.requirementCount')}
-            value={t('drawer.requirementsShort', { count: feature.requirements.length })}
+            value={String(feature.requirements.length)}
           />
         </SimpleGrid>
 
@@ -541,7 +541,7 @@ function TasksPanel({ feature }: { feature: Feature }) {
                         size="xs"
                         mt={2}
                         color="teal"
-                        aria-label={task.done ? t('drawer.done') : t('drawer.notDone')}
+                        aria-label={`${task.id}: ${task.description}`}
                       />
                       <Box style={{ minWidth: 0, flex: 1 }}>
                         <Group gap={5} wrap="nowrap" align="baseline">
@@ -643,7 +643,7 @@ function DocsPanel({
   openFile: string | null
   setOpenFile: (file: string) => void
 }) {
-  const { t, ago } = useT()
+  const { t, tb, ago, bytes } = useT()
   return (
     <Group align="flex-start" gap="md" wrap="nowrap">
       <Box w={230} style={{ flex: 'none' }}>
@@ -653,8 +653,8 @@ function DocsPanel({
               <NavLink
                 key={artifact.file}
                 active={openFile === artifact.file}
-                label={artifact.label}
-                description={`${formatBytes(artifact.bytes)} · ${ago(artifact.modified)}`}
+                label={tb(artifact.label_key, artifact.label_vars, artifact.label)}
+                description={`${bytes(artifact.bytes)} · ${ago(artifact.modified)}`}
                 onClick={() => setOpenFile(artifact.file)}
                 variant="light"
                 className={classes.navlink}
@@ -677,7 +677,7 @@ function DocsPanel({
 }
 
 function GitPanel({ feature }: { feature: Feature }) {
-  const { t } = useT()
+  const { t, ago } = useT()
   const [commits, setCommits] = useState<Commit[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -717,7 +717,8 @@ function GitPanel({ feature }: { feature: Feature }) {
             title={<Text size="sm">{commit.subject}</Text>}
           >
             <Text size="xs" c="dimmed">
-              <Code fz={10}>{commit.sha}</Code> · {commit.author} · {commit.relative}
+              <Code fz={10}>{commit.sha}</Code> · {commit.author} ·{' '}
+              {ago(Date.parse(commit.date) / 1000)}
             </Text>
           </Timeline.Item>
         ))}
@@ -734,7 +735,7 @@ function GitPanel({ feature }: { feature: Feature }) {
  * noticed — so it is styled as a record rather than as an alert.
  */
 function ChecksPanel({ feature }: { feature: Feature }) {
-  const { t } = useT()
+  const { t, tb } = useT()
   const constitution = feature.constitution
   const rows = constitution?.rows ?? []
 
@@ -765,7 +766,7 @@ function ChecksPanel({ feature }: { feature: Feature }) {
                     </Badge>
                     <Box style={{ minWidth: 0 }}>
                       <Text size="sm" lh={1.45}>
-                        {finding.message}
+                        {tb(finding.message_key, finding.message_vars, finding.message)}
                       </Text>
                       {/* Every derived state carries its evidence, so the file
                           that disagrees is named rather than implied. */}

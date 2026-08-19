@@ -352,3 +352,76 @@ def test_findings_come_back_worst_first_and_in_a_stable_order():
     assert dupes == ["FR-002", "FR-009"]
     assert checks.worst(findings) == "blocker"
     assert checks.findings_for(feature) == findings
+
+
+def test_every_finding_carries_a_key_and_its_variables():
+    """A finding is prose, so it crosses the wire twice.
+
+    The English sentence stays — an API consumer keeps what it had — and the key
+    beside it is what an interface renders in the reader's own language. The two
+    have to agree about the numbers, which is what makes this worth asserting:
+    a key whose variables do not fill its placeholders renders a sentence with
+    a `{count}` in it.
+    """
+    feature = make_feature(
+        stage="done",
+        status="draft",
+        progress=Progress(done=2, total=2),
+        tasks=[task("T001", "one", done=True), task("T002", "two", done=True)],
+        open_questions=["how many?"],
+        duplicate_requirements=["FR-007"],
+        requirements=[Requirement(id="FR-001", text="a"), Requirement(id="FR-002", text="b")],
+        user_stories=[
+            UserStory(id="US9", number=9, title="ghost", in_spec=False)
+        ],
+        checklists=[
+            Checklist(
+                name="ux",
+                file="checklists/ux.md",
+                title="UX",
+                items=[ChecklistItem(text="a", done=False)],
+            )
+        ],
+        constitution=ConstitutionResult(verdict="fail", evidence="principle II"),
+    )
+
+    findings = checks.findings_for(feature)
+    assert findings, "the fixture is meant to trip several rules at once"
+    for finding in findings:
+        assert finding.message_key.startswith("checks.msg.")
+        assert finding.message, "the English sentence is still the fallback"
+
+
+def test_a_stage_crosses_the_wire_as_an_id_not_as_a_word():
+    """The interface owns what a stage is called, in both languages."""
+    feature = make_feature(stage="plan", open_questions=["which store?"])
+
+    (finding,) = [f for f in checks.findings_for(feature) if f.code == "open-clarification"]
+
+    assert finding.message_key == "checks.msg.open-clarification.committed"
+    assert finding.message_vars["stage"] == "plan"
+
+
+def test_every_key_the_backend_emits_exists_in_the_dictionary():
+    """The two halves ship in one image, so they may as well be checked together.
+
+    A rule that starts emitting a key nobody wrote a sentence for degrades to
+    English rather than breaking — but it degrades silently, and this is the
+    test that refuses to let it.
+    """
+    import re
+    from pathlib import Path
+
+    from app import history, main, scanner
+
+    dictionary = Path(__file__).resolve().parents[2] / "frontend" / "src" / "i18n.ts"
+    written = set(re.findall(r"'([a-z]+\.[a-zA-Z0-9.\-]+)':", dictionary.read_text()))
+
+    emitted = set(re.findall(r'"((?:checks\.msg|trend\.reason|doc)\.[a-zA-Z0-9.\-]+)"',
+                             "".join(Path(m.__file__).read_text()
+                                     for m in (checks, history, main))))
+    emitted |= {f"doc.{name[:-3]}" for name, _ in scanner.KNOWN_ARTIFACTS}
+    emitted |= {"doc.contract", "doc.checklist"}
+
+    assert emitted, "the regex is meant to find the keys, not to pass by finding none"
+    assert emitted <= written, f"no sentence written for {sorted(emitted - written)}"
