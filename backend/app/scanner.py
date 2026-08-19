@@ -60,7 +60,14 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def _artifact(path: Path, rel: str, key: str, label: str) -> Artifact:
+def _artifact(
+    path: Path,
+    rel: str,
+    key: str,
+    label: str,
+    label_key: str = "",
+    label_vars: dict[str, str | int] | None = None,
+) -> Artifact:
     st = path.stat()
     text = ""
     with contextlib.suppress(OSError):
@@ -69,6 +76,8 @@ def _artifact(path: Path, rel: str, key: str, label: str) -> Artifact:
         key=key,
         file=rel,
         label=label,
+        label_key=label_key,
+        label_vars=label_vars or {},
         bytes=st.st_size,
         modified=st.st_mtime,
         headings=sum(1 for line in text.splitlines() if line.startswith("#")),
@@ -189,7 +198,7 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
         if filename not in entries or not path.is_file():
             continue
         key = filename[:-3]
-        artifacts.append(_artifact(path, filename, key, label))
+        artifacts.append(_artifact(path, filename, key, label, f"doc.{key}"))
         try:
             texts[key] = _read(path)
         except OSError:
@@ -201,7 +210,16 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
         for path in sorted(contracts_dir.iterdir()):
             if path.is_file() and path.suffix in (".md", ".yaml", ".yml", ".json"):
                 rel = f"contracts/{path.name}"
-                artifacts.append(_artifact(path, rel, rel, f"Contract · {path.stem}"))
+                artifacts.append(
+                    _artifact(
+                        path,
+                        rel,
+                        rel,
+                        f"Contract · {path.stem}",
+                        "doc.contract",
+                        {"name": path.stem},
+                    )
+                )
                 modified = max(modified, path.stat().st_mtime)
 
     known = {a[0] for a in KNOWN_ARTIFACTS}
@@ -227,7 +245,16 @@ def scan_feature(project: Project, feature_dir: Path, *, with_git: bool) -> Feat
                 checklists.append(parsing.parse_checklist(path.stem, rel, _read(path)))
             except OSError:
                 continue
-            artifacts.append(_artifact(path, rel, rel, f"Checklist · {path.stem}"))
+            artifacts.append(
+                _artifact(
+                    path,
+                    rel,
+                    rel,
+                    f"Checklist · {path.stem}",
+                    "doc.checklist",
+                    {"name": path.stem},
+                )
+            )
             modified = max(modified, path.stat().st_mtime)
 
     progress = Progress(done=sum(1 for t in tasks if t.done), total=len(tasks))

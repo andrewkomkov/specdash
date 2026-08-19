@@ -421,7 +421,7 @@ def test_the_series_cache_evicts_rather_than_growing(repo, monkeypatch):
     monkeypatch.setattr(history, "_CACHE_LIMIT", 1)
 
     history.project_history(repo, "one")
-    history._remember(("other", "sha"), history._unavailable("other", "just to fill the cache"))
+    history._remember(("other", "sha"), history._unavailable("other", "just to fill the cache", "trend.reason.no-commits"))
 
     assert len(history._series_cache) <= 1
 

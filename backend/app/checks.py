@@ -91,6 +91,12 @@ def _unreferenced_requirements(feature: Feature) -> list[Finding]:
                 f"{len(missing)} of {len(feature.requirements)} requirements are named by no "
                 f"task, while others are: {listed}"
             ),
+            message_key="checks.msg.requirement-unreferenced",
+            message_vars={
+                "missing": len(missing),
+                "total": len(feature.requirements),
+                "listed": listed,
+            },
             ref=missing[0],
             file="spec.md",
         )
@@ -113,11 +119,18 @@ def _open_clarifications(feature: Feature) -> list[Finding]:
         if committed
         else "spec.md has an open clarification marker"
     )
+    key = (
+        "checks.msg.open-clarification.committed"
+        if committed
+        else "checks.msg.open-clarification"
+    )
     return [
         Finding(
             code="open-clarification",
             severity=severity,
             message=f"{message}: {_shorten(q)}",
+            message_key=key,
+            message_vars={"stage": feature.stage, "question": _shorten(q)},
             ref=_shorten(q, 40),
             file="spec.md",
         )
@@ -147,6 +160,11 @@ def _status_disagrees(feature: Feature) -> list[Finding]:
                 f'spec.md still says "{_shorten(feature.status, 40)}" over a fully ticked '
                 f"tasks.md ({feature.progress.total}/{feature.progress.total})"
             ),
+            message_key="checks.msg.status-disagrees",
+            message_vars={
+                "status": _shorten(feature.status, 40),
+                "total": feature.progress.total,
+            },
             file="spec.md",
         )
     ]
@@ -163,6 +181,8 @@ def _stories_not_in_spec(feature: Feature) -> list[Finding]:
             code="story-not-in-spec",
             severity="warn",
             message=f"tasks.md assigns work to {s.id}, which spec.md does not define",
+            message_key="checks.msg.story-not-in-spec",
+            message_vars={"story": s.id},
             ref=s.id,
             file="tasks.md",
         )
@@ -178,6 +198,8 @@ def _duplicate_requirements(feature: Feature) -> list[Finding]:
             code="requirement-duplicate",
             severity="warn",
             message=f"{req_id} is declared more than once in spec.md",
+            message_key="checks.msg.requirement-duplicate",
+            message_vars={"id": req_id},
             ref=req_id,
             file="spec.md",
         )
@@ -199,6 +221,8 @@ def _checklist_open_in_done(feature: Feature) -> list[Finding]:
                 f"every task is ticked but {progress.total - progress.done} of "
                 f"{progress.total} checklist items are not"
             ),
+            message_key="checks.msg.checklist-open-in-done",
+            message_vars={"open": progress.total - progress.done, "total": progress.total},
             ref=", ".join(open_lists) or None,
             file=open_lists[0] if open_lists else None,
         )
@@ -216,6 +240,14 @@ def _constitution_failed(feature: Feature) -> list[Finding]:
             severity="blocker",
             message="plan.md records a failed constitution check"
             + (f": {_shorten(result.evidence)}" if result.evidence else ""),
+            message_key=(
+                "checks.msg.constitution-failed.evidence"
+                if result.evidence
+                else "checks.msg.constitution-failed"
+            ),
+            message_vars=(
+                {"evidence": _shorten(result.evidence)} if result.evidence else {}
+            ),
             file="plan.md",
         )
     ]

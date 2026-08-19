@@ -35,8 +35,10 @@ _blob_cache: dict[str, tuple[int, int]] = {}
 _BLOB_LIMIT = 4096
 
 
-def _unavailable(project_id: str, reason: str) -> ProjectHistory:
-    return ProjectHistory(project_id=project_id, available=False, reason=reason)
+def _unavailable(project_id: str, reason: str, key: str) -> ProjectHistory:
+    """Why no series can honestly be drawn — in English, and as a key an
+    interface can render in the reader's language."""
+    return ProjectHistory(project_id=project_id, available=False, reason=reason, reason_key=key)
 
 
 def _remember(key: tuple[str, str], value: ProjectHistory) -> ProjectHistory:
@@ -160,11 +162,15 @@ def project_history(
 ) -> ProjectHistory:
     """Task completion per commit, oldest first, plus the features gone quietest."""
     if not git.is_repo(project_path):
-        return _unavailable(project_id, "this project is not a git repository")
+        return _unavailable(
+            project_id, "this project is not a git repository", "trend.reason.not-git"
+        )
 
     head = git.head(project_path)
     if head is None:
-        return _unavailable(project_id, "this repository has no commits yet")
+        return _unavailable(
+            project_id, "this repository has no commits yet", "trend.reason.no-commits"
+        )
 
     key = (str(project_path), head)
     cached = _series_cache.get(key)
@@ -183,19 +189,33 @@ def project_history(
         timeout=30,
     )
     if raw is None:
-        return _remember(key, _unavailable(project_id, "git log could not be read"))
+        return _remember(
+            key,
+            _unavailable(project_id, "git log could not be read", "trend.reason.log-failed"),
+        )
     if not raw.strip():
-        return _remember(key, _unavailable(project_id, "no commit has touched specs/ yet"))
+        return _remember(
+            key,
+            _unavailable(
+                project_id, "no commit has touched specs/ yet", "trend.reason.no-specs-commit"
+            ),
+        )
 
     commits, touched, task_paths = _parse_log(raw)
     if not commits:
-        return _remember(key, _unavailable(project_id, "no commit has touched specs/ yet"))
+        return _remember(
+            key,
+            _unavailable(
+                project_id, "no commit has touched specs/ yet", "trend.reason.no-specs-commit"
+            ),
+        )
     if not task_paths:
         return _remember(
             key,
             _unavailable(
                 project_id,
                 "no tasks.md has ever been committed, so there is nothing to count",
+                "trend.reason.no-tasks-md",
             ),
         )
 
@@ -237,7 +257,12 @@ def project_history(
 
     if not points:
         return _remember(
-            key, _unavailable(project_id, "no committed tasks.md holds any task to count")
+            key,
+            _unavailable(
+                project_id,
+                "no committed tasks.md holds any task to count",
+                "trend.reason.no-countable",
+            ),
         )
 
     stale = [

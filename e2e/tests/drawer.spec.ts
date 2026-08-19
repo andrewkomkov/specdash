@@ -15,7 +15,9 @@ test.describe('the drawer reads a feature end to end', () => {
     await expect(drawer).toContainText('Half the work is done')
     await expect(drawer).toContainText('FR-001')
     await expect(drawer).toContainText('SC-001')
-    await expect(drawer).toContainText('2 FR')
+    // The stat card is labelled `Requirements`; repeating `FR` in its value said
+    // nothing the label had not already said.
+    await expect(drawer.getByText('Requirements', { exact: true })).toBeVisible()
   })
 
   test('the task list groups by phase and filters to the unfinished', async ({ page }) => {
@@ -113,7 +115,7 @@ test.describe('the drawer reads a feature end to end', () => {
       .filter({ hasText: 'No git here' })
       .click()
 
-    await expect(page.getByRole('dialog')).toContainText('open question')
+    await expect(page.getByRole('dialog')).toContainText('Open questions in spec.md')
     await expect(page.getByRole('dialog')).toContainText('should it offer to initialise one?')
   })
 

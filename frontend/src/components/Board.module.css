@@ -40,9 +40,16 @@
   background: var(--stage);
 }
 
+/* The header row is nowrap and the label is now translated, so the longest of
+   them — `Спецификация` — must be allowed to shrink rather than to widen the
+   column. Feature 011 was spent on exactly this failure one level down. */
 .stageName {
   letter-spacing: 0.06em;
   color: var(--ink-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .count {

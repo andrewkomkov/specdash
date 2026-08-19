@@ -2,15 +2,6 @@ export type Stage = 'specify' | 'clarify' | 'plan' | 'tasks' | 'implement' | 'do
 
 export const STAGES: Stage[] = ['specify', 'clarify', 'plan', 'tasks', 'implement', 'done']
 
-export const STAGE_LABEL: Record<Stage, string> = {
-  specify: 'Specify',
-  clarify: 'Clarify',
-  plan: 'Plan',
-  tasks: 'Tasks',
-  implement: 'Implement',
-  done: 'Done',
-}
-
 /** The stage ramp, as CSS custom properties.
  *
  * Six ordered steps rather than six unrelated hues: a pipeline has a direction,
@@ -111,6 +102,9 @@ export type Severity = 'blocker' | 'warn' | 'info'
 export interface Finding {
   code: string
   severity: Severity
+  /** Dictionary key for `message`; the English sentence stays beside it. */
+  message_key: string
+  message_vars: Record<string, string | number>
   message: string
   ref: string | null
   file: string | null
@@ -170,6 +164,8 @@ export interface DeclaredWorkflow {
 export interface Artifact {
   key: string
   file: string
+  label_key: string
+  label_vars: Record<string, string | number>
   label: string
   bytes: number
   modified: number
@@ -263,6 +259,7 @@ export interface StaleFeature {
 export interface ProjectHistory {
   project_id: string
   available: boolean
+  reason_key: string | null
   reason: string | null
   points: HistoryPoint[]
   stale: StaleFeature[]

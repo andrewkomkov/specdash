@@ -73,7 +73,7 @@ export function StoryCard({ row, showProject, flashing, onOpen }: Props) {
             color={PROGRESS_COLOR}
             className={classes.pill}
           >
-            current
+            {t('card.currentBadge')}
           </Badge>
         )}
       </Group>

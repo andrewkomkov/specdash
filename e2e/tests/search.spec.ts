@@ -44,7 +44,7 @@ test.describe('search reads the documents', () => {
     expect(kinds.length).toBeGreaterThan(0)
     expect(new Set(kinds).size).toBeGreaterThan(1)
     for (const kind of kinds) {
-      expect(['story', 'task', 'document', 'feature', 'req', 'checklist']).toContain(kind)
+      expect(['story', 'task', 'document', 'feature', 'requirement', 'checklist']).toContain(kind)
     }
   })
 

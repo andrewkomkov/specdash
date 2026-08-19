@@ -270,6 +270,7 @@ async def project_history(project_id: str) -> dict:
         return ProjectHistory(
             project_id=project_id,
             reason="git reading is switched off (SPECDASH_GIT=0)",
+            reason_key="trend.reason.git-off",
         ).model_dump()
     result = await asyncio.to_thread(
         history.project_history,

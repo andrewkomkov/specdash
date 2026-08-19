@@ -43,7 +43,7 @@ export function Trend({ projects }: Props) {
 }
 
 function ProjectTrend({ project }: { project: Project }) {
-  const { t } = useT()
+  const { t, tb } = useT()
   const [history, setHistory] = useState<ProjectHistory | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -118,7 +118,11 @@ function ProjectTrend({ project }: { project: Project }) {
           title={t('trend.unavailable')}
           py={8}
         >
-          <Text size="xs">{history.reason ?? t('trend.noData')}</Text>
+          <Text size="xs">
+            {history.reason
+              ? tb(history.reason_key, undefined, history.reason)
+              : t('trend.noData')}
+          </Text>
         </Alert>
       ) : (
         <>
@@ -135,7 +139,7 @@ const H = 150
 const PAD = { l: 34, r: 12, t: 12, b: 22 }
 
 function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const times = points.map((p) => Date.parse(p.date))
   const minX = Math.min(...times)
   const maxX = Math.max(...times)
@@ -157,7 +161,7 @@ function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
       : ''
 
   const gradient = `trend-${id.replace(/[^A-Za-z0-9_-]/g, '')}`
-  const dateLabel = (t: number) => new Date(t).toLocaleDateString()
+  const dateLabel = (t: number) => new Date(t).toLocaleDateString(lang)
 
   return (
     <Box>
@@ -223,7 +227,7 @@ function Chart({ points, id }: { points: HistoryPoint[]; id: string }) {
             fill="var(--progress)"
           >
             <title>
-              {`${new Date(times[i]).toLocaleString()}\n${t('trend.pointTooltip', {
+              {`${new Date(times[i]).toLocaleString(lang)}\n${t('trend.pointTooltip', {
                 done: p.done,
                 total: p.total,
                 pct: p.pct,

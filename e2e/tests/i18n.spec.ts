@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { column, gotoBoard } from './helpers'
+import { column, gotoBoard, setGrain } from './helpers'
 
 /**
  * The language is chosen in the browser, from the browser's own preference and
@@ -22,7 +22,7 @@ test.describe('the board speaks the reader’s language', () => {
 
     await expect(page.getByRole('banner')).toContainText('spec-kit · только чтение')
     await expect(page.getByRole('banner')).toContainText('Фичи')
-    await expect(column(page, 'clarify')).toContainText('Ничего не уточнено')
+    await expect(column(page, 'clarify')).toContainText('Пока нет ничего уточнённого')
     await expect(column(page, 'implement')).toContainText('задач в колонке')
   })
 
@@ -57,6 +57,58 @@ test.describe('the board speaks the reader’s language', () => {
     await expect(page.getByRole('banner')).toContainText(/[234] фичи/)
   })
 
+  test('a counted noun agrees with its number in every Russian form', async ({ page }) => {
+    await gotoBoard(page)
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+
+    // The noun bends around the total beside it, which is the form the old
+    // dictionary could not express at all: nine takes `задач`, three takes
+    // `задачи`, and both are read off the board rather than asserted about the
+    // function that produced them.
+    await expect(column(page, 'implement')).toContainText('5/9 задач в колонке')
+    await expect(column(page, 'done')).toContainText('6/6 задач в колонке')
+
+    await column(page, 'implement')
+      .getByTestId('feature-card')
+      .filter({ hasText: 'Map the catalogue' })
+      .click()
+    await expect(page.getByRole('dialog')).toContainText('2/3 задачи')
+  })
+
+  test('the interface never spells a plural with a bracket', async ({ page }) => {
+    await gotoBoard(page)
+    await expect(page.locator('body')).not.toContainText('(s)')
+
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+    await expect(page.locator('body')).not.toContainText('(s)')
+  })
+
+  test('the connection indicator speaks Russian too', async ({ page }) => {
+    await gotoBoard(page)
+    await expect(page.getByRole('banner')).toContainText('live')
+
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+    await expect(page.getByRole('banner')).toContainText('на связи')
+    await expect(page.getByRole('banner')).not.toContainText('live')
+  })
+
+  test('the six column headers are translated', async ({ page }) => {
+    await gotoBoard(page)
+    await expect(column(page, 'implement')).toContainText('Implement')
+
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+    await expect(column(page, 'implement')).toContainText('Реализация')
+    await expect(column(page, 'done')).toContainText('Готово')
+  })
+
+  test('the document is marked as being in the language it is written in', async ({ page }) => {
+    await gotoBoard(page)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  })
+
   test('a browser asking for a language we do not have falls back to English', async ({
     browser,
   }) => {
@@ -66,6 +118,52 @@ test.describe('the board speaks the reader’s language', () => {
 
     await expect(page.getByRole('banner')).toContainText('spec-kit · read-only')
     await context.close()
+  })
+
+  test('no English label survives the switch to Russian', async ({ page }) => {
+    await gotoBoard(page)
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+
+    // Every one of these was on a Russian board before this was written. The
+    // assertions are scoped to what SpecDash writes: the fixture's own spec.md
+    // says "belongs in Specify", and that sentence is the user's, not ours.
+    const banner = page.getByRole('banner')
+    for (const english of ['Features', 'Stories', 'Trend', 'live', 'Search']) {
+      await expect(banner).not.toContainText(english)
+    }
+
+    await expect(column(page, 'implement')).not.toContainText('tasks in this column')
+    await expect(column(page, 'clarify')).not.toContainText('Nothing is clarified')
+    await expect(column(page, 'tasks')).not.toContainText('Nothing has tasks cut')
+  })
+
+  test('prose the backend composed is translated too', async ({ page }) => {
+    await gotoBoard(page)
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+
+    // A finding is a sentence SpecDash writes about a feature, so it crosses
+    // the wire as a key and its variables rather than as English only.
+    const card = column(page, 'plan').getByTestId('feature-card')
+    await expect(card.getByTestId('finding-badge')).toHaveText('1 блокер')
+
+    await card.click()
+    await page.getByRole('tab', { name: 'Проверки' }).click()
+    await expect(
+      page.getByText('В plan.md записана не пройденная проверка конституции'),
+    ).toBeVisible()
+
+    // And so does the label of a document, while the file it names does not.
+    await page.getByRole('tab', { name: 'Документы' }).click()
+    await expect(page.getByText('Спецификация', { exact: true }).first()).toBeVisible()
+  })
+
+  test('a project outside git says why in Russian', async ({ page }) => {
+    await gotoBoard(page)
+    await page.getByRole('banner').getByText('RU', { exact: true }).click()
+    await setGrain(page, 'Динамика')
+
+    await expect(page.getByText('История недоступна').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Проект не под управлением git.').first()).toBeVisible()
   })
 
   test('the user’s own writing is never translated', async ({ page }) => {

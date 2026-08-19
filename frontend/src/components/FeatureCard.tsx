@@ -113,7 +113,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
               className={classes.pill}
               leftSection={<IconFlame size={11} />}
             >
-              current
+              {t("card.currentBadge")}
             </Badge>
           </Tooltip>
         )}
@@ -200,8 +200,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
                 data-testid="finding-badge"
                 data-severity={feature.findings[0].severity}
               >
-                {feature.findings.length}{" "}
-                {t(`checks.severity.${feature.findings[0].severity}`)}
+                {n(feature.findings.length, feature.findings[0].severity)}
               </Badge>
             </Tooltip>
           </Group>
@@ -219,7 +218,15 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
                   withArrow
                   multiline
                   w={260}
-                  label={`${story.title}${story.total ? ` — ${n(story.total, "task")}, ${story.done} ${t("trend.closed")}` : ""}`}
+                  label={
+                    story.total
+                      ? t("card.storyTooltip", {
+                          title: story.title,
+                          tasks: n(story.total, "task"),
+                          done: story.done,
+                        })
+                      : story.title
+                  }
                 >
                   {/* Priority is weight, not hue. A finished P1 story is not an
                       emergency, and red belongs to findings. */}
@@ -234,7 +241,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
                     fw={PRIORITY_WEIGHT[story.priority ?? ""] ?? 500}
                   >
                     {story.id}
-                    {story.priority ? `·${story.priority}` : ""}
+                    {story.priority ? ` · ${story.priority}` : ""}
                     {story.total ? ` ${storyPct}%` : ""}
                   </Badge>
                 </Tooltip>
@@ -278,7 +285,7 @@ export function FeatureCard({ feature, showProject, flashing, onOpen }: Props) {
                 px={5}
                 className={classes.pill}
               >
-                {contracts}c
+                {t("card.contractsShort", { count: contracts })}
               </Badge>
             </Tooltip>
           )}
