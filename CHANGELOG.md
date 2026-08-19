@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/andrewkomkov/specdash/compare/v0.7.1...v0.8.0) (2026-08-19)
+
+
+### Features
+
+* **i18n:** one voice in two languages ([#56](https://github.com/andrewkomkov/specdash/issues/56)) ([b6b8503](https://github.com/andrewkomkov/specdash/commit/b6b8503969d678720007731a624db90e4ae02278))
+
 ## [0.7.1](https://github.com/andrewkomkov/specdash/compare/v0.7.0...v0.7.1) (2026-08-16)
 
 
