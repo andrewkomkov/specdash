@@ -10,7 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@mantine/core": "^9.5.1",
+    "@mantine/core": "^9.5.2",
     "@mantine/hooks": "^9.5.1",
     "@tabler/icons-react": "^3.34.0",
     "react": "^19.1.0",
