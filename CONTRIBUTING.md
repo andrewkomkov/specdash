@@ -34,7 +34,7 @@ checked it, and leave genuinely outstanding work unticked and say so.
 ```bash
 # backend
 cd backend
-python3.13 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+python3.14 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 SPECDASH_ROOTS=$HOME/projects .venv/bin/python -m uvicorn app.main:app --reload --port 8420
 
 # frontend
