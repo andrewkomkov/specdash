@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/andrewkomkov/specdash/compare/v0.7.1...v0.8.0) (2026-10-09)
+
+
+### Features
+
+* **i18n:** one voice in two languages ([#56](https://github.com/andrewkomkov/specdash/issues/56)) ([b6b8503](https://github.com/andrewkomkov/specdash/commit/b6b8503969d678720007731a624db90e4ae02278))
+
+
+### Build
+
+* bump eslint from 10.8.1 to 10.9.1 in /frontend ([#66](https://github.com/andrewkomkov/specdash/issues/66)) ([ebdd8d7](https://github.com/andrewkomkov/specdash/commit/ebdd8d72461275646e21fa9fc7ea5928a008c507))
+* bump globals from 17.9.0 to 17.11.0 in /frontend ([#59](https://github.com/andrewkomkov/specdash/issues/59)) ([8de2842](https://github.com/andrewkomkov/specdash/commit/8de2842d1610b46531d8b8ce51df69082441c4ff))
+* bump pydantic to 2.13.5 and the vite group (vite 8.2.2, @vitejs/plugin-react 6.1.0) ([#81](https://github.com/andrewkomkov/specdash/issues/81)) ([ffee606](https://github.com/andrewkomkov/specdash/commit/ffee606f529d718d4cdb19744f07b8b84c50d745))
+* bump ruff from 0.16.2 to 0.16.10 in /backend ([#78](https://github.com/andrewkomkov/specdash/issues/78)) ([5a808e5](https://github.com/andrewkomkov/specdash/commit/5a808e5fb8c9df67ba2114c3d209687debe48a97))
+* bump the mantine group in /frontend with 2 updates ([#62](https://github.com/andrewkomkov/specdash/issues/62)) ([61b1970](https://github.com/andrewkomkov/specdash/commit/61b19705d65609a8d3c962a67d6eaed05180a104))
+* bump the react group across 1 directory with 4 updates ([#73](https://github.com/andrewkomkov/specdash/issues/73)) ([0eb27d5](https://github.com/andrewkomkov/specdash/commit/0eb27d5b2ae8acb6314c0e0a85b5c8315baab459))
+* bump uvicorn from 0.52.1 to 0.54.0 in /backend ([#76](https://github.com/andrewkomkov/specdash/issues/76)) ([2175265](https://github.com/andrewkomkov/specdash/commit/21752654a67ccedcd78d5fcccd624f95508329e7))
+* bump watchfiles from 1.2.0 to 1.3.0 in /backend ([#75](https://github.com/andrewkomkov/specdash/issues/75)) ([cf28f9c](https://github.com/andrewkomkov/specdash/commit/cf28f9c7764c46b6b736b092ef19e4d450034384))
+
 ## [0.7.1](https://github.com/andrewkomkov/specdash/compare/v0.7.0...v0.7.1) (2026-08-16)
 
 
