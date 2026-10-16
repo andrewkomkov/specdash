@@ -5,6 +5,17 @@ updates:
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
     commit-message: { prefix: "build" }
+    groups:
+      # A dependency lands in the first group it matches, so the narrow groups
+      # come first and the catch-all below sweeps up what is left. Majors match
+      # no group on purpose: they arrive one at a time, where a release note is
+      # worth reading.
+      backend-tooling:
+        patterns: ["pytest*", "ruff", "httpx"]
+        update-types: ["minor", "patch"]
+      backend-runtime:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: npm
     directory: /frontend
@@ -18,6 +29,17 @@ updates:
       # one alone cannot install: each pull request fails at `npm ci` against the
       # version of the other still on main. They have to arrive together.
       vite: { patterns: ["vite", "@vitejs/*"] }
+      # Lint is one toolchain in practice -- eslint, its config package, its
+      # plugins and the globals list only ever move together, and a rule change
+      # is only reviewable with all of them in one diff.
+      lint:
+        patterns: ["eslint", "@eslint/*", "eslint-plugin-*", "typescript-eslint", "globals"]
+        update-types: ["minor", "patch"]
+      # Everything the groups above do not claim: icons, markdown, postcss.
+      # Majors fall through to their own pull request, typescript included.
+      frontend-rest:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       # typescript-eslint refuses to load under TS 7.0 -- it throws on import, so
       # this is not a warning to work around. Support is tracked for TS >= 7.1 in
@@ -36,6 +58,10 @@ updates:
     directory: /
     schedule: { interval: weekly }
     commit-message: { prefix: "ci" }
+    groups:
+      # Workflow action pins are one unit of review: they are read together in
+      # one file and nothing here is version-coupled to the code.
+      actions: { patterns: ["*"] }
 
   - package-ecosystem: docker
     directory: /
