@@ -104,6 +104,6 @@ palette validation would have:
 
 ## Outstanding
 
-- [ ] T043 Regenerate `.github/assets/*.png`, which still show the old design. Held deliberately:
-      the current shots are taken against the author's real root and would put three project names
-      into a public repository that were not there before. Needs a decision, not a command.
+- [x] T043 Regenerate `.github/assets/*.png`, which still showed the old design. Taken against the
+      e2e fixture workspace (atlas, beacon, orphan) rather than the author's real root, so no project
+      name enters the repository that was not already in it; `npm run screenshots` in `e2e/`.
